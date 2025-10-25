@@ -19,8 +19,9 @@
  */
 
 import React, { useState, FormEvent } from 'react';
-import { AgriculturalParameters } from '@/lib/maps-grounding';
-import { useLiveAPIContext } from '../contexts/LiveAPIContext';
+import { AgriculturalParameters, fetchAgriculturalRecommendations } from '@/lib/maps-grounding';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface AgriculturalFormProps {
   onSubmit?: (params: AgriculturalParameters) => void;
@@ -42,7 +43,8 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
 
   const [showOptional, setShowOptional] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { client, connected } = useLiveAPIContext();
+  const [response, setResponse] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (field: keyof AgriculturalParameters, value: any) => {
     setFormData(prev => ({
@@ -56,36 +58,31 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
     
     // Validate required fields
     if (!formData.latitude || !formData.longitude) {
-      alert('Please enter valid latitude and longitude coordinates');
+      setError('Please enter valid latitude and longitude coordinates');
       return;
     }
 
     if (formData.latitude < -90 || formData.latitude > 90) {
-      alert('Latitude must be between -90 and 90 degrees');
+      setError('Latitude must be between -90 and 90 degrees');
       return;
     }
 
     if (formData.longitude < -180 || formData.longitude > 180) {
-      alert('Longitude must be between -180 and 180 degrees');
+      setError('Longitude must be between -180 and 180 degrees');
       return;
     }
 
     setIsSubmitting(true);
+    setError(null);
+    setResponse(null);
 
     try {
-      // Call the agricultural recommendation tool
-      if (connected && client) {
-        const toolCall = {
-          name: 'agriculturalRecommendation',
-          args: formData
-        };
-
-        // Send the tool call to the AI
-        await client.sendRealtimeInput([{
-          mimeType: 'text/plain',
-          data: btoa(JSON.stringify(toolCall))
-        }]);
-      }
+      // Call the agricultural recommendation API directly
+      const result = await fetchAgriculturalRecommendations(formData);
+      
+      // Extract the text response from the API result
+      const responseText = result.candidates?.[0]?.content?.parts?.[0]?.text || 'No recommendations available';
+      setResponse(responseText);
 
       // Call the optional onSubmit callback
       if (onSubmit) {
@@ -93,7 +90,7 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
       }
     } catch (error) {
       console.error('Error submitting agricultural form:', error);
-      alert('Error submitting form. Please try again.');
+      setError('Error getting recommendations. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -268,17 +265,29 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
           <button
             type="submit"
             className="submit-button"
-            disabled={isSubmitting || !connected}
+            disabled={isSubmitting}
           >
             {isSubmitting ? 'Getting Recommendations...' : '🌾 Get Crop Recommendations'}
           </button>
-          {!connected && (
-            <p className="connection-warning">
-              Please connect to the AI service first to get recommendations.
+          {error && (
+            <p className="error-message" style={{ color: 'red', marginTop: '10px' }}>
+              {error}
             </p>
           )}
         </div>
       </form>
+
+      {/* Response Section */}
+      {response && (
+        <div className="recommendations-section" style={{ marginTop: '20px', padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+          <h3>🎯 Crop Recommendations</h3>
+          <div className="recommendation-content">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {response}
+            </ReactMarkdown>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

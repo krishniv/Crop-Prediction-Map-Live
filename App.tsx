@@ -19,10 +19,8 @@
  */
 import React, {useCallback, useState, useEffect, useRef} from 'react';
 
-
 import ControlTray from './components/ControlTray';
 import ErrorScreen from './components/ErrorScreen';
-import StreamingConsole from './components/streaming-console/StreamingConsole';
 import Sidebar from './components/Sidebar';
 import AgriculturalForm from './components/AgriculturalForm';
 import { LiveAPIProvider } from './contexts/LiveAPIContext';
@@ -263,8 +261,7 @@ function AppComponent() {
         <div className="app-layout">
           <div className="form-panel">
             <AgriculturalForm />
-            <div className="console-panel" ref={consolePanelRef}>
-              <StreamingConsole />
+            <div className="control-panel" ref={consolePanelRef}>
               <ControlTray trayRef={controlTrayRef} />
             </div>
           </div>
