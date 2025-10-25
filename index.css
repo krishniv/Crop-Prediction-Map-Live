@@ -1208,6 +1208,7 @@ gmp-place-details-compact {
 
 /* Agricultural Form Styles */
 .agricultural-form {
+  z-index: 1000;
   padding: 24px;
   background: var(--gray-900);
   color: var(--text);
