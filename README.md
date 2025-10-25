@@ -2,6 +2,10 @@
 
 This sample app is for illustration only. It uses both Gemini (including Grounding with Google Maps) and Google Maps Platform services.  It is your responsibility to review the relevant Terms of Service applicable to your region, and you must confirm that your integration will comply with those terms.  This sample app may show products or functionality that are not available in your region under the Terms of Service for that region.
 
+npm install
+npm run dev
+
+
 # Setting Up Your Google Maps API Key
 
 **IMPORTANT:** This demo uses several Google Maps Platform APIs to function correctly. The API key included in the sample code is for demonstration purposes only and is subject to restrictive quotas that may cause the application to fail. To ensure a stable experience and to explore the full capabilities of the application, you **must obtain and use your own API key**.
