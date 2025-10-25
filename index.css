@@ -1825,149 +1825,85 @@ gmp-place-details-compact {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 18px 40px;
-  background: #03241b;
-  border-bottom: 1px solid rgba(103, 240, 156, 0.2);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
-  position: sticky;
-  top: 0;
-  z-index: 2000;
+  background: #052018;
+  color: #e0f6e8;
+  padding: 14px 28px;
+  border-bottom: 1px solid #0f2b22;
 }
-
-.header-right {
+.brand-title { font-size: 1.6rem; color: #67f09c; }
+.brand-subtitle { font-size: 0.9rem; color: #9ac7b2; }
+.header-right button {
+  background: none;
+  border: 1px solid #67f09c;
+  color: #67f09c;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+.header-right button:hover {
+  background: #67f09c;
+  color: #03241b;
+}
+.farmer-info {
   display: flex;
   align-items: center;
-  flex-direction: row;
-  gap: 15px;
+  gap: 10px;
 }
 
-.brand-title {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #67f09c;
-  margin: 0;
-}
-
-.brand-subtitle {
-  font-size: 0.95rem;
-  color: #b2d2c0;
-  margin: 2px 0 0 4px;
-}
-
-/* 🟢 Farm-o-Buzz Button */
-.news-button {
-  background-color: #22c55e;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.news-button:hover {
-  background-color: #16a34a;
-  transform: translateY(-2px);
-}
-
-
-/* 🟢 Sign In Button */
-.signin-button {
-  background-color: #22c55e;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.signin-button:hover {
-  background-color: #16a34a;
-  transform: translateY(-2px);
-}
-
-/* 🧩 Modal Styling */
+/* modal */
 .signin-modal {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  inset: 0;
+  background: rgba(0,0,0,0.65);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 5000;
-  backdrop-filter: blur(4px);
+  z-index: 9999;
+  animation: fadeIn 0.3s;
 }
-
 .signin-card {
-  background: #0a2b1f;
-  border: 1px solid rgba(103, 240, 156, 0.3);
-  border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  width: 380px;
-  padding: 28px;
+  background: #0d1f18;
+  color: #e0f6e8;
+  padding: 30px 40px;
+  border-radius: 16px;
+  box-shadow: 0 0 25px rgba(103,240,156,0.3);
+  max-width: 380px;
+  width: 90%;
   position: relative;
-  color: #e0f6e8;
+  animation: slideUp 0.4s;
 }
-
-.signin-card h2 {
-  text-align: center;
-  color: #67f09c;
-  margin-bottom: 20px;
-}
-
-.signin-card form {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
 .signin-card input {
-  background: #082218;
-  color: #e0f6e8;
-  border: 1px solid rgba(103, 240, 156, 0.3);
-  border-radius: 8px;
+  width: 100%;
+  margin: 5px 0 10px;
   padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #3a5448;
+  background: #112820;
+  color: #fff;
 }
-
 .login-btn {
-  background: #22c55e;
-  border: none;
-  border-radius: 8px;
-  padding: 10px;
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.login-btn:hover {
-  background: #16a34a;
-}
-
-.register-text {
-  text-align: center;
-  font-size: 0.9rem;
-}
-
-.register-text a {
-  color: #67f09c;
-  text-decoration: none;
-}
-
-.close-modal {
-  position: absolute;
-  top: 12px;
-  right: 14px;
-  background: none;
+  background: linear-gradient(135deg,#4a7c59 0%,#67f09c 100%);
   border: none;
   color: #fff;
-  font-size: 1.3rem;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 6px;
+}
+.close-modal {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: none;
+  color: #ccc;
+  border: none;
+  font-size: 22px;
   cursor: pointer;
 }
+
+
+@keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+@keyframes slideUp { from {transform:translateY(25px);opacity:0;} to {transform:translateY(0);opacity:1;} }
+
