@@ -108,7 +108,7 @@ export class MapController {
         const cornerMarker = new this.maps3dLib.Marker3DInteractiveElement({
           position: corner,
           altitudeMode: 'RELATIVE_TO_MESH',
-          label: `Corner ${index + 1}`,
+          // label: `Corner ${index + 1}`,
           title: `Rectangle Corner ${index + 1}`,
           drawsWhenOccluded: true,
         });
