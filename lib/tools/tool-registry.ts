@@ -433,7 +433,7 @@ const agriculturalRecommendation: ToolImplementation = async (args, context) => 
     temperature: args.temperature,
     irrigationAvailable: args.irrigationAvailable,
     farmSize: args.farmSize,
-    previousCrop: args.previousCrop,
+    multiCrop: args.multiCrop,
   };
 
   try {
@@ -464,6 +464,24 @@ const agriculturalRecommendation: ToolImplementation = async (args, context) => 
 
     // Update map with the farm marker
     useMapStore.getState().setMarkers([farmMarker]);
+    debugger
+    // Try to extract the assistant's textual response (the model is instructed to return JSON)
+    const responseText = agriculturalResponse?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (responseText) {
+      try {
+        const parsed = JSON.parse(responseText);
+        // Print the parsed JSON to the browser console for easy debugging/inspection.
+        // This satisfies the request: once the AI returns a value, log the JSON output.
+        // eslint-disable-next-line no-console
+        console.log('AgriculturalRecommendation JSON output:', parsed);
+      } catch (e) {
+        // If parsing fails, log a warning and the raw text for debugging.
+        // eslint-disable-next-line no-console
+        console.warn('Could not parse agriculturalRecommendation response as JSON:', e);
+        // eslint-disable-next-line no-console
+        console.log('Raw agriculturalRecommendation response text:', responseText);
+      }
+    }
 
     return agriculturalResponse;
   } catch (error) {

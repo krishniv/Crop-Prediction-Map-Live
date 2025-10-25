@@ -39,7 +39,7 @@
 //     temperature: undefined,
 //     irrigationAvailable: undefined,
 //     farmSize: undefined,
-//     previousCrop: undefined,
+//     multiCrop: undefined,
 //   });
 
 //   const [showOptional, setShowOptional] = useState(false);
@@ -290,12 +290,12 @@
 //                   </label>
 //                 </div>
 //                 <div className="input-field">
-//                   <label htmlFor="previousCrop">Previous Crop</label>
+//                   <label htmlFor="multiCrop">Multi Crop</label>
 //                   <input
 //                     type="text"
-//                     id="previousCrop"
-//                     value={formData.previousCrop || ''}
-//                     onChange={(e) => handleInputChange('previousCrop', e.target.value || undefined)}
+//                     id="multiCrop"
+//                     value={formData.multiCrop || ''}
+//                     onChange={(e) => handleInputChange('multiCrop', e.target.value || undefined)}
 //                     placeholder="e.g., Wheat, Corn, Rice"
 //                   />
 //                 </div>
@@ -386,7 +386,7 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
     temperature: undefined,
     irrigationAvailable: undefined,
     farmSize: undefined,
-    previousCrop: undefined,
+    multiCrop: undefined,
   });
 
   const [showOptional, setShowOptional] = useState(false);
@@ -667,15 +667,15 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
                     </label>
                   </div>
                   <div className="input-field">
-                    <label htmlFor="previousCrop">Previous Crop</label>
+                    <label htmlFor="multiCrop">Multi Crop</label>
                     <input
                       type="text"
-                      id="previousCrop"
-                      value={formData.previousCrop || ''}
+                      id="multiCrop"
+                      value={formData.multiCrop || ''}
                       onChange={(e) =>
-                        handleInputChange('previousCrop', e.target.value || undefined)
+                        handleInputChange('multiCrop', e.target.value || undefined)
                       }
-                      placeholder="e.g., Wheat, Corn, Rice"
+                      placeholder="Yes/No"
                     />
                   </div>
                 </div>
