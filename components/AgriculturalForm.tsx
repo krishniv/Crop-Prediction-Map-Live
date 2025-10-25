@@ -647,6 +647,18 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
                       step="any"
                     />
                   </div>
+                  <div className="input-field">
+                    <label htmlFor="multiCrop">Multi Crop</label>
+                    <input
+                      type="text"
+                      id="multiCrop"
+                      value={formData.multiCrop || ''}
+                      onChange={(e) =>
+                        handleInputChange('multiCrop', e.target.value || undefined)
+                      }
+                      placeholder="Yes/No"
+                    />
+                  </div>
                 </div>
                 <div className="input-group">
                   <div className="input-field checkbox-field">
@@ -661,18 +673,7 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
                       Irrigation Available
                     </label>
                   </div>
-                  <div className="input-field">
-                    <label htmlFor="multiCrop">Multi Crop</label>
-                    <input
-                      type="text"
-                      id="multiCrop"
-                      value={formData.multiCrop || ''}
-                      onChange={(e) =>
-                        handleInputChange('multiCrop', e.target.value || undefined)
-                      }
-                      placeholder="Yes/No"
-                    />
-                  </div>
+                  
                 </div>
               </div>
             )}

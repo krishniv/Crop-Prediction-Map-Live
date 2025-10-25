@@ -1830,8 +1830,25 @@ gmp-place-details-compact {
   padding: 14px 28px;
   border-bottom: 1px solid #0f2b22;
 }
-.brand-title { font-size: 1.6rem; color: #67f09c; }
-.brand-subtitle { font-size: 0.9rem; color: #9ac7b2; }
+
+/* Brand styles */
+.brand-title {
+  font-size: 1.6rem;
+  color: #67f09c;
+}
+
+.brand-subtitle {
+  font-size: 0.9rem;
+  color: #9ac7b2;
+}
+
+/* Header right section */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px; /* space between news and sign-in/profile */
+}
+
 .header-right button {
   background: none;
   border: 1px solid #67f09c;
@@ -1841,17 +1858,37 @@ gmp-place-details-compact {
   cursor: pointer;
   transition: 0.2s ease;
 }
+
 .header-right button:hover {
   background: #67f09c;
   color: #03241b;
 }
+
+/* Farmer info (when logged in) */
 .farmer-info {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-/* modal */
+/* Style for the Farm-o-Buzz button */
+.news-button {
+  background-color: #1a3d2f;
+  color: #baf7d0;
+  border: 1px solid #2b6b4e;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.news-button:hover {
+  background-color: #228b5a;
+  transform: translateY(-1px);
+}
+
+/* Modal */
 .signin-modal {
   position: fixed;
   inset: 0;
@@ -1862,6 +1899,7 @@ gmp-place-details-compact {
   z-index: 9999;
   animation: fadeIn 0.3s;
 }
+
 .signin-card {
   background: #0d1f18;
   color: #e0f6e8;
@@ -1873,6 +1911,7 @@ gmp-place-details-compact {
   position: relative;
   animation: slideUp 0.4s;
 }
+
 .signin-card input {
   width: 100%;
   margin: 5px 0 10px;
@@ -1882,6 +1921,7 @@ gmp-place-details-compact {
   background: #112820;
   color: #fff;
 }
+
 .login-btn {
   background: linear-gradient(135deg,#4a7c59 0%,#67f09c 100%);
   border: none;
@@ -1892,6 +1932,7 @@ gmp-place-details-compact {
   cursor: pointer;
   margin-top: 6px;
 }
+
 .close-modal {
   position: absolute;
   top: 8px;
@@ -1903,7 +1944,13 @@ gmp-place-details-compact {
   cursor: pointer;
 }
 
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 
-@keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
-@keyframes slideUp { from {transform:translateY(25px);opacity:0;} to {transform:translateY(0);opacity:1;} }
-
+@keyframes slideUp {
+  from { transform: translateY(25px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
