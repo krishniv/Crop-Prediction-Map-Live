@@ -412,9 +412,7 @@ function AppComponent() {
       <div className="app-layout">
         <div className="form-panel">
           <AgriculturalForm />
-          <div className="control-panel" ref={consolePanelRef}>
-            <ControlTray trayRef={controlTrayRef} />
-          </div>
+          
         </div>
 
         <div className="map-panel">
