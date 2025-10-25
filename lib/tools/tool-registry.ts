@@ -24,7 +24,7 @@
  */
 
 import { GenerateContentResponse, GroundingChunk } from '@google/genai';
-import { fetchMapsGroundedResponseREST } from '@/lib/maps-grounding';
+import { fetchMapsGroundedResponseREST, fetchAgriculturalRecommendations, AgriculturalParameters } from '@/lib/maps-grounding';
 import { MapMarker, useLogStore, useMapStore } from '@/lib/state';
 import { lookAtWithPadding } from '../look-at';
 
@@ -416,6 +416,63 @@ const frameLocations: ToolImplementation = async (args, context) => {
 };
 
 /**
+ * Tool implementation for agricultural recommendations.
+ * This tool provides crop recommendations based on location and agricultural parameters.
+ */
+const agriculturalRecommendation: ToolImplementation = async (args, context) => {
+  const { setHeldGroundedResponse, setHeldGroundingChunks } = context;
+  
+  // Extract agricultural parameters from args
+  const agriculturalParams: AgriculturalParameters = {
+    latitude: args.latitude,
+    longitude: args.longitude,
+    soilType: args.soilType,
+    climate: args.climate,
+    season: args.season,
+    rainfall: args.rainfall,
+    temperature: args.temperature,
+    irrigationAvailable: args.irrigationAvailable,
+    farmSize: args.farmSize,
+    previousCrop: args.previousCrop,
+  };
+
+  try {
+    const agriculturalResponse = await fetchAgriculturalRecommendations(agriculturalParams);
+
+    if (!agriculturalResponse) {
+      return 'Failed to get agricultural recommendations.';
+    }
+
+    // Hold response data for display in the chat log
+    setHeldGroundedResponse(agriculturalResponse);
+    const groundingChunks =
+      agriculturalResponse?.candidates?.[0]?.groundingMetadata?.groundingChunks;
+    if (groundingChunks && groundingChunks.length > 0) {
+      setHeldGroundingChunks(groundingChunks);
+    }
+
+    // Create a marker at the farm location
+    const farmMarker: MapMarker = {
+      position: {
+        lat: agriculturalParams.latitude,
+        lng: agriculturalParams.longitude,
+        altitude: 1,
+      },
+      label: `Farm Location (${agriculturalParams.soilType} soil, ${agriculturalParams.climate} climate)`,
+      showLabel: true,
+    };
+
+    // Update map with the farm marker
+    useMapStore.getState().setMarkers([farmMarker]);
+
+    return agriculturalResponse;
+  } catch (error) {
+    console.error('Error getting agricultural recommendations:', error);
+    return `Error getting agricultural recommendations: ${error}`;
+  }
+};
+
+/**
  * A registry mapping tool names to their implementation functions.
  * The `onToolCall` handler uses this to dispatch function calls dynamically.
  */
@@ -423,4 +480,5 @@ export const toolRegistry: Record<string, ToolImplementation> = {
   mapsGrounding,
   frameEstablishingShot,
   frameLocations,
+  agriculturalRecommendation,
 };

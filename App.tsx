@@ -21,9 +21,8 @@ import React, {useCallback, useState, useEffect, useRef} from 'react';
 
 import ControlTray from './components/ControlTray';
 import ErrorScreen from './components/ErrorScreen';
-import StreamingConsole from './components/streaming-console/StreamingConsole';
-import PopUp from './components/popup/PopUp';
 import Sidebar from './components/Sidebar';
+import AgriculturalForm from './components/AgriculturalForm';
 import { LiveAPIProvider } from './contexts/LiveAPIContext';
 // FIX: Correctly import APIProvider as a named export.
 import { APIProvider, useMapsLibrary } from '@vis.gl/react-google-maps';
@@ -31,13 +30,16 @@ import { Map3D, Map3DCameraProps} from './components/map-3d';
 import { useMapStore } from './lib/state';
 import { MapController } from './lib/map-controller';
 
+
 const ApiKeyWarning = ({ currentApiKey }: { currentApiKey: string }) => {
   const [isVisible, setIsVisible] = useState(true);
   const DEFAULT_API_KEY = 'AIzaSyCYTvt7YMcKjSNTnBa42djlndCeDvZHkr0';
 
+
   if (currentApiKey !== DEFAULT_API_KEY || !isVisible) {
     return null;
   }
+
 
   return (
     <div className="api-key-warning">
@@ -50,14 +52,15 @@ const ApiKeyWarning = ({ currentApiKey }: { currentApiKey: string }) => {
 };
 
 
+
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY as string;
 if (typeof GEMINI_API_KEY !== 'string') {
   throw new Error(
     'Missing required environment variable: GEMINI_API_KEY'
   );
 }
-const MAPS_API_KEY = 'AIzaSyCYTvt7YMcKjSNTnBa42djlndCeDvZHkr0';
-
+// Use environment variable for Maps API key, fallback to demo key
+const MAPS_API_KEY = process.env.MAPS_API_KEY || 'AIzaSyCYTvt7YMcKjSNTnBa42djlndCeDvZHkr0';
 const INITIAL_VIEW_PROPS = {
   center: {
     lat: 41.8739368,
@@ -69,6 +72,7 @@ const INITIAL_VIEW_PROPS = {
   tilt: 30,
   roll: 0
 };
+
 
 /**
  * The main application component. It serves as the primary view controller,
@@ -85,15 +89,16 @@ function AppComponent() {
   const { markers, cameraTarget, setCameraTarget, preventAutoFrame } = useMapStore();
   const mapController = useRef<MapController | null>(null);
 
+
   const maps3dLib = useMapsLibrary('maps3d');
   const elevationLib = useMapsLibrary('elevation');
 
-  const [showPopUp, setShowPopUp] = useState(true);
 
   const consolePanelRef = useRef<HTMLDivElement>(null);
   const controlTrayRef = useRef<HTMLElement>(null);
   // Padding state is used to ensure map content isn't hidden by UI elements.
   const [padding, setPadding] = useState<[number, number, number, number]>([0.05, 0.05, 0.05, 0.05]);
+
 
   // Effect: Instantiate the Geocoder once the library is loaded.
   useEffect(() => {
@@ -101,6 +106,7 @@ function AppComponent() {
       setGeocoder(new geocodingLib.Geocoder());
     }
   }, [geocodingLib]);
+
 
   // Effect: Instantiate the MapController.
   // This runs once all necessary map libraries and the map element itself are
@@ -119,6 +125,7 @@ function AppComponent() {
     };
   }, [map, maps3dLib, elevationLib]);
 
+
   // Effect: Calculate responsive padding.
   // This effect observes the size of the console and control tray to calculate
   // padding values. These values represent how much of the viewport is
@@ -131,34 +138,41 @@ function AppComponent() {
       const vh = window.innerHeight;
       const vw = window.innerWidth;
 
+
       if (!consoleEl || !trayEl) return;
 
+
       const isMobile = window.matchMedia('(max-width: 768px)').matches;
-      
+
       const top = 0.05;
       const right = 0.05;
       let bottom = 0.05;
       let left = 0.05;
+
 
       if (!isMobile) {
           // On desktop, console is on the left. The tray is now inside it.
           left = Math.max(left, (consoleEl.offsetWidth / vw) + 0.02); // add 2% buffer
           // The tray no longer covers the bottom of the map on desktop.
       }
-      
+
       setPadding([top, right, bottom, left]);
     };
+
 
     // Use ResizeObserver for more reliable updates on the elements themselves.
     const observer = new ResizeObserver(calculatePadding);
     if (consolePanelRef.current) observer.observe(consolePanelRef.current);
     if (controlTrayRef.current) observer.observe(controlTrayRef.current);
 
+
     // Also listen to window resize
     window.addEventListener('resize', calculatePadding);
 
+
     // Initial calculation after a short delay to ensure layout is stable
     const timeoutId = setTimeout(calculatePadding, 100);
+
 
     return () => {
         window.removeEventListener('resize', calculatePadding);
@@ -167,10 +181,7 @@ function AppComponent() {
     };
   }, []);
 
-  const handleClosePopUp = () => {
-    setShowPopUp(false);
-  };
-  
+
   useEffect(() => {
     if (map) {
       const banner = document.querySelector(
@@ -183,6 +194,7 @@ function AppComponent() {
   }, [map]);
 
 
+
   // Effect: Reactively render markers and routes on the map.
   // This is the core of the component's "reactive" nature. It listens for
   // changes to the `markers` array in the global Zustand store.
@@ -192,21 +204,25 @@ function AppComponent() {
   useEffect(() => {
     if (!mapController.current) return;
 
+
     const controller = mapController.current;
     controller.clearMap();
+
 
     if (markers.length > 0) {
       controller.addMarkers(markers);
     }
-    
+
     // Combine all points from markers for framing
     const markerPositions = markers.map(m => m.position);
     const allEntities = [...markerPositions].map(p => ({ position: p }));
+
 
     if (allEntities.length > 0 && !preventAutoFrame) {
       controller.frameEntities(allEntities, padding);
     }
   }, [markers, padding, preventAutoFrame]); // Re-run when markers or padding change
+
 
 
   // Effect: Reactively handle direct camera movement requests.
@@ -225,9 +241,11 @@ function AppComponent() {
   }, [cameraTarget, setCameraTarget]);
 
 
+
   const handleCameraChange = useCallback((props: Map3DCameraProps) => {
       setViewProps(oldProps => ({...oldProps, ...props}));
     }, []);
+
 
   return (
     <LiveAPIProvider 
@@ -240,11 +258,12 @@ function AppComponent() {
     >
         <ErrorScreen />
         <Sidebar />
-         {showPopUp && <PopUp onClose={handleClosePopUp} />}
-        <div className="streaming-console">
-          <div className="console-panel" ref={consolePanelRef}>
-            <StreamingConsole />
-            <ControlTray trayRef={controlTrayRef} />
+        <div className="app-layout">
+          <div className="form-panel">
+            <AgriculturalForm />
+            <div className="control-panel" ref={consolePanelRef}>
+              <ControlTray trayRef={controlTrayRef} />
+            </div>
           </div>
           <div className="map-panel">
               <Map3D
@@ -257,6 +276,7 @@ function AppComponent() {
     </LiveAPIProvider>
   );
 }
+
 
 
 /**
@@ -274,8 +294,10 @@ function App() {
       <AppComponent />
     </APIProvider>
 
+
     </div>
   );
 }
+
 
 export default App;

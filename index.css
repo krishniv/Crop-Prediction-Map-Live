@@ -31,6 +31,13 @@ code {
   --midnight-blue: rgb(0, 18, 51);
   --blue-30: #99beff;
   --accent-red: #ff4600;
+  /* Agricultural theme colors */
+  --agricultural-green: #4a7c59;
+  --agricultural-light-green: #6b9b7a;
+  --agricultural-dark-green: #2d4a35;
+  --agricultural-brown: #8b4513;
+  --agricultural-light-brown: #a0522d;
+  --agricultural-gold: #daa520;
   --background: var(--gray-900);
   --color: var(--text);
   scrollbar-color: var(--gray-600) var(--gray-900);
@@ -1175,4 +1182,231 @@ gmp-place-details-compact {
 
 .api-key-warning button:hover {
   opacity: 1;
+}
+
+/* Agricultural Application Styles */
+.app-layout {
+  display: flex;
+  height: 100vh;
+  background: linear-gradient(135deg, var(--agricultural-dark-green) 0%, var(--agricultural-green) 100%);
+}
+
+.form-panel {
+  width: 40%;
+  min-width: 400px;
+  background: var(--gray-900);
+  border-right: 2px solid var(--agricultural-green);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.map-panel {
+  flex: 1;
+  background: var(--gray-800);
+}
+
+/* Agricultural Form Styles */
+.agricultural-form {
+  z-index: 1000;
+  padding: 24px;
+  background: var(--gray-900);
+  color: var(--text);
+}
+
+.form-header {
+  margin-bottom: 32px;
+  text-align: center;
+  border-bottom: 2px solid var(--agricultural-green);
+  padding-bottom: 16px;
+}
+
+.form-header h2 {
+  color: var(--agricultural-light-green);
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.form-header p {
+  color: var(--gray-300);
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-section {
+  background: var(--gray-800);
+  border: 1px solid var(--agricultural-green);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.form-section h3 {
+  color: var(--agricultural-light-green);
+  margin: 0 0 16px 0;
+  font-size: 20px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.input-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.input-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-field label {
+  color: var(--gray-300);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.input-field input,
+.input-field select {
+  background: var(--gray-700);
+  border: 1px solid var(--agricultural-green);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 12px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.input-field input:focus,
+.input-field select:focus {
+  outline: none;
+  border-color: var(--agricultural-light-green);
+  box-shadow: 0 0 0 2px rgba(107, 155, 122, 0.2);
+}
+
+.input-field input::placeholder {
+  color: var(--gray-500);
+}
+
+.checkbox-field {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkbox-field label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.checkbox-field input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--agricultural-green);
+}
+
+.toggle-optional {
+  background: var(--agricultural-green);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 16px;
+}
+
+.toggle-optional:hover {
+  background: var(--agricultural-light-green);
+}
+
+.optional-params {
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.form-actions {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.submit-button {
+  background: linear-gradient(135deg, var(--agricultural-green) 0%, var(--agricultural-light-green) 100%);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  padding: 16px 32px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(74, 124, 89, 0.3);
+}
+
+.submit-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(74, 124, 89, 0.4);
+}
+
+.submit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.connection-warning {
+  color: var(--accent-red);
+  font-size: 14px;
+  margin-top: 12px;
+  text-align: center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .app-layout {
+    flex-direction: column;
+  }
+  
+  .form-panel {
+    width: 100%;
+    min-width: unset;
+    height: 50vh;
+  }
+  
+  .map-panel {
+    height: 50vh;
+  }
+  
+  .input-group {
+    grid-template-columns: 1fr;
+  }
+  
+  .agricultural-form {
+    padding: 16px;
+  }
 }

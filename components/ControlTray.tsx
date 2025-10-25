@@ -21,7 +21,6 @@
 import cn from 'classnames';
 // FIX: Added missing React imports.
 import React, { memo, useEffect, useRef, useState, FormEvent, Ref } from 'react';
-import { AudioRecorder } from '../lib/audio-recorder';
 import { useLogStore, useUI, useSettings } from '@/lib/state';
 
 import { useLiveAPIContext } from '../contexts/LiveAPIContext';
@@ -50,9 +49,6 @@ export type ControlTrayProps = {
 };
 
 function ControlTray({trayRef}: ControlTrayProps) {
-  const [speakerMuted, setSpeakerMuted] = useState(false);
-  const [audioRecorder] = useState(() => new AudioRecorder());
-  const [muted, setMuted] = useState(true);
   const [textPrompt, setTextPrompt] = useState('');
   const connectButtonRef = useRef<HTMLButtonElement>(null);
   const { toggleSidebar } = useUI();
@@ -62,46 +58,13 @@ function ControlTray({trayRef}: ControlTrayProps) {
   const [isTextEntryVisible, setIsTextEntryVisible] = useState(false);
   const isLandscape = useMediaQuery('(orientation: landscape) and (max-height: 768px)');
 
-
-  const { client, connected, connect, disconnect, audioStreamer } =
-    useLiveAPIContext();
-
-  useEffect(() => {
-    if (audioStreamer.current) {
-      audioStreamer.current.gainNode.gain.value = speakerMuted ? 0 : 1;
-    }
-  }, [speakerMuted, audioStreamer]);
+  const { client, connected, connect, disconnect } = useLiveAPIContext();
 
   useEffect(() => {
     if (!connected && connectButtonRef.current) {
       connectButtonRef.current.focus();
     }
   }, [connected]);
-
-  useEffect(() => {
-    const onData = (base64: string) => {
-      client.sendRealtimeInput([
-        {
-          mimeType: 'audio/pcm;rate=16000',
-          data: base64,
-        },
-      ]);
-    };
-    
-    if (connected && !muted && audioRecorder) {
-      audioRecorder.on('data', onData);
-      audioRecorder.start();
-    } else {
-      audioRecorder.stop();
-    }
-    return () => {
-      audioRecorder.off('data', onData);
-    };
-  }, [connected, client, muted, audioRecorder]);
-
-  const handleMicClick = () => {
-    setMuted(!muted);
-  };
 
   const handleTextSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -151,9 +114,7 @@ function ControlTray({trayRef}: ControlTrayProps) {
     }
   };
 
-  const micButtonTitle = muted ? 'Unmute microphone' : 'Mute microphone';
-
-  const connectButtonTitle = connected ? 'Stop streaming' : 'Start streaming';
+  const connectButtonTitle = connected ? 'Stop session' : 'Start session';
 
   return (
     <section className="control-tray" ref={trayRef}>
@@ -167,36 +128,6 @@ function ControlTray({trayRef}: ControlTrayProps) {
           <span className="material-symbols-outlined filled">
             {connected ? 'pause' : 'play_arrow'}
           </span>
-        </button>
-        <button
-          type="button"
-          aria-label={
-            !speakerMuted ? 'Audio output on' : 'Audio output off'
-          }
-          className={cn('action-button', {
-            'speaker-on': !speakerMuted,
-            'speaker-off': speakerMuted,
-          })}
-          onClick={() => setSpeakerMuted(!speakerMuted)}
-          title={!speakerMuted ? 'Mute audio output' : 'Unmute audio output'}
-        >
-          <span className="material-symbols-outlined">
-            {!speakerMuted ? 'volume_up' : 'volume_off'}
-          </span>
-        </button>
-        <button
-          className={cn('action-button mic-button', {
-            'mic-on': !muted,
-            'mic-off': muted,
-          })}
-          onClick={handleMicClick}
-          title={micButtonTitle}
-        >
-          {!muted ? (
-            <span className="material-symbols-outlined filled">mic</span>
-          ) : (
-            <span className="material-symbols-outlined filled">mic_off</span>
-          )}
         </button>
         <button
           className={cn('action-button keyboard-toggle-button')}

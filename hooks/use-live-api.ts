@@ -19,11 +19,9 @@
 * limitations under the License.
 */
 
-import { MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { GenAILiveClient } from '../lib/genai-live-client';
-import { LiveConnectConfig, Modality, LiveServerToolCall } from '@google/genai';
-import { AudioStreamer } from '../lib/audio-streamer';
-import { audioContext } from '../lib/utils';
+import { LiveConnectConfig, LiveServerToolCall } from '@google/genai';
 import { useLogStore, useMapStore, useSettings } from '@/lib/state';
 import { GenerateContentResponse, GroundingChunk } from '@google/genai';
 import { ToolContext, toolRegistry } from '@/lib/tools/tool-registry';
@@ -32,13 +30,9 @@ export type UseLiveApiResults = {
   client: GenAILiveClient;
   setConfig: (config: LiveConnectConfig) => void;
   config: LiveConnectConfig;
-  audioStreamer: MutableRefObject<AudioStreamer | null>;
-
   connect: () => Promise<void>;
   disconnect: () => void;
   connected: boolean;
-
-  volume: number;
   heldGroundingChunks: GroundingChunk[] | undefined;
   clearHeldGroundingChunks: () => void;
   heldGroundedResponse: GenerateContentResponse | undefined;
@@ -63,11 +57,7 @@ export function useLiveApi({
   const { model } = useSettings();
   const client = useMemo(() => new GenAILiveClient(apiKey, model), [apiKey, model]);
 
-  const audioStreamerRef = useRef<AudioStreamer | null>(null);
-
-  const [volume, setVolume] = useState(0);
   const [connected, setConnected] = useState(false);
-  const [streamerReady, setStreamerReady] = useState(false);
   const [config, setConfig] = useState<LiveConnectConfig>({});
   const [heldGroundingChunks, setHeldGroundingChunks] = useState<
     GroundingChunk[] | undefined
@@ -84,17 +74,6 @@ export function useLiveApi({
     setHeldGroundedResponse(undefined);
   }, []);
 
-  // register audio for streaming server -> speakers (volume meter disabled)
-  useEffect(() => {
-    if (!audioStreamerRef.current) {
-      audioContext({ id: 'audio-out' }).then((audioCtx: AudioContext) => {
-        audioStreamerRef.current = new AudioStreamer(audioCtx);
-        setStreamerReady(true);
-      }).catch(err => {
-        console.error('Error initializing audio context:', err);
-      });
-    }
-  }, []);
 
   // This effect sets up the main event listeners for the GenAILiveClient.
   useEffect(() => {
@@ -108,7 +87,6 @@ export function useLiveApi({
 
     const onClose = (event: CloseEvent) => {
       setConnected(false);
-      stopAudioStreamer();
       let reason = "Session ended. Press 'Play' to start a new session. "+ event.reason;
       useLogStore.getState().addTurn({
         role: 'agent',
@@ -117,24 +95,12 @@ export function useLiveApi({
       });
     };
 
-    const stopAudioStreamer = () => {
-      if (audioStreamerRef.current) {
-        audioStreamerRef.current.stop();
-      }
-    };
 
     const onInterrupted = () => {
-      stopAudioStreamer();
       const { updateLastTurn, turns } = useLogStore.getState();
       const lastTurn = turns[turns.length - 1];
       if (lastTurn && !lastTurn.isFinal) {
         updateLastTurn({ isFinal: true });
-      }
-    };
-
-    const onAudio = (data: ArrayBuffer) => {
-      if (audioStreamerRef.current) {
-        audioStreamerRef.current.addPCM16(new Uint8Array(data));
       }
     };
     
@@ -145,7 +111,6 @@ export function useLiveApi({
     client.on('setupcomplete', onSetupComplete);
     client.on('close', onClose);
     client.on('interrupted', onInterrupted);
-    client.on('audio', onAudio);
     client.on('generationcomplete', onGenerationComplete);
 
     const onToolCall = async (toolCall: LiveServerToolCall) => {
@@ -229,7 +194,6 @@ export function useLiveApi({
       client.off('setupcomplete', onSetupComplete);
       client.off('close', onClose);
       client.off('interrupted', onInterrupted);
-      client.off('audio', onAudio);
       client.off('toolcall', onToolCall);
       client.off('generationcomplete', onGenerationComplete);
     };
@@ -257,11 +221,9 @@ export function useLiveApi({
     connect,
     connected,
     disconnect,
-    volume,
     heldGroundingChunks,
     clearHeldGroundingChunks,
     heldGroundedResponse,
     clearHeldGroundedResponse,
-    audioStreamer: audioStreamerRef,
   };
 }
