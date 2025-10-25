@@ -450,7 +450,7 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
         corners: corners,
         width: dimensions.width,
         height: dimensions.height,
-        // label: `Farm Location (${farmSize} hectares)`,
+        label: `Farm Location (${farmSize} hectares)`,
         color: '#ff0000' // Red color as requested
       };
       
@@ -490,16 +490,11 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
   const overlayPortal =
     response && mapContainer
       ? createPortal(
-          <div className="map-overlay-recommendations" role="dialog" aria-live="polite">
-            <div className="overlay-inner">
-              <div className="overlay-header">
-                <h3>🎯 Crop Recommendations</h3>
-              </div>
-              <div className="recommendation-content">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{response}</ReactMarkdown>
-              </div>
-            </div>
-          </div>,
+          <DraggableResizableOverlay
+            mapContainer={mapContainer}
+            response={response}
+            overlayClassName="map-overlay-recommendations"
+          />,
           mapContainer
         )
       : null;
@@ -699,6 +694,104 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
        </div>
       {overlayPortal}
     </>
+  );
+}
+
+// Small helper component: draggable & resizable overlay
+function DraggableResizableOverlay({
+  mapContainer,
+  response,
+  overlayClassName,
+}: {
+  mapContainer: HTMLElement;
+  response: string;
+  overlayClassName?: string;
+}) {
+  const overlayRef = React.useRef<HTMLDivElement | null>(null);
+
+  // position in pixels from the top-left of the mapContainer
+  const [pos, setPos] = React.useState<{ left: number; top: number }>(() => ({ left: 20, top: 20 }));
+  const [size, setSize] = React.useState<{ width: number; height: number }>(() => ({ width: 380, height: 320 }));
+  const draggingRef = React.useRef(false);
+  const dragOffsetRef = React.useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // initialize to bottom-right corner if possible
+  React.useEffect(() => {
+    if (!mapContainer || !overlayRef.current) return;
+    const containerRect = mapContainer.getBoundingClientRect();
+    const initWidth = size.width;
+    const initHeight = size.height;
+    const left = Math.max(12, containerRect.width - initWidth - 20);
+    const top = Math.max(12, containerRect.height - initHeight - 20);
+    setPos({ left, top });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapContainer]);
+
+  React.useEffect(() => {
+    function onPointerMove(e: PointerEvent) {
+      if (!draggingRef.current) return;
+      e.preventDefault();
+      const mapRect = mapContainer.getBoundingClientRect();
+      const clientX = e.clientX;
+      const clientY = e.clientY;
+      const left = clientX - mapRect.left - dragOffsetRef.current.x;
+      const top = clientY - mapRect.top - dragOffsetRef.current.y;
+      // clamp
+      const clampedLeft = Math.min(Math.max(6, left), Math.max(6, mapRect.width - (overlayRef.current?.offsetWidth || size.width) - 6));
+      const clampedTop = Math.min(Math.max(6, top), Math.max(6, mapRect.height - (overlayRef.current?.offsetHeight || size.height) - 6));
+      setPos({ left: clampedLeft, top: clampedTop });
+    }
+
+    function onPointerUp() {
+      if (draggingRef.current) draggingRef.current = false;
+    }
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+  }, [mapContainer, size.height, size.width]);
+
+  function startDrag(e: React.PointerEvent) {
+    if (!overlayRef.current) return;
+    draggingRef.current = true;
+    overlayRef.current.setPointerCapture(e.pointerId);
+    const mapRect = mapContainer.getBoundingClientRect();
+    const offsetX = e.clientX - mapRect.left - pos.left;
+    const offsetY = e.clientY - mapRect.top - pos.top;
+    dragOffsetRef.current = { x: offsetX, y: offsetY };
+  }
+
+  // After resize (CSS resize), update our state to reflect new width/height
+  function onResizeEnd() {
+    if (!overlayRef.current) return;
+    setSize({ width: overlayRef.current.offsetWidth, height: overlayRef.current.offsetHeight });
+  }
+
+  return (
+    <div
+      ref={overlayRef}
+      className={overlayClassName}
+      role="dialog"
+      aria-live="polite"
+      style={{ position: 'absolute', left: pos.left, top: pos.top, width: size.width, height: size.height }}
+    >
+      <div className="overlay-inner" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div
+          className="overlay-header"
+          onPointerDown={startDrag}
+          style={{ cursor: 'move', userSelect: 'none', flex: '0 0 auto', paddingBottom: 6 }}
+        >
+          <h3 style={{ margin: 0 }}>🎯 Crop Recommendations</h3>
+        </div>
+
+        <div className="recommendation-content" style={{ overflow: 'auto', flex: '1 1 auto' }} onPointerUp={onResizeEnd}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{response}</ReactMarkdown>
+        </div>
+      </div>
+    </div>
   );
 }
 
