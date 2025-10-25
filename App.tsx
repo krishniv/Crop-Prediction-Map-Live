@@ -79,204 +79,355 @@ const INITIAL_VIEW_PROPS = {
  * orchestrating the layout of UI components and reacting to global state changes
  * to update the 3D map.
  */
+// function AppComponent() {
+//   const [map, setMap] = useState<google.maps.maps3d.Map3DElement | null>(null);
+//   const placesLib = useMapsLibrary('places');
+//   const geocodingLib = useMapsLibrary('geocoding');
+//   const [geocoder, setGeocoder] = useState<google.maps.Geocoder | null>(null);
+//   const [viewProps, setViewProps] = useState(INITIAL_VIEW_PROPS);
+//   // Subscribe to marker and camera state from the global Zustand store.
+//   const { markers, cameraTarget, setCameraTarget, preventAutoFrame } = useMapStore();
+//   const mapController = useRef<MapController | null>(null);
+
+
+//   const maps3dLib = useMapsLibrary('maps3d');
+//   const elevationLib = useMapsLibrary('elevation');
+
+
+//   const consolePanelRef = useRef<HTMLDivElement>(null);
+//   const controlTrayRef = useRef<HTMLElement>(null);
+//   // Padding state is used to ensure map content isn't hidden by UI elements.
+//   const [padding, setPadding] = useState<[number, number, number, number]>([0.05, 0.05, 0.05, 0.05]);
+
+
+//   // Effect: Instantiate the Geocoder once the library is loaded.
+//   useEffect(() => {
+//     if (geocodingLib) {
+//       setGeocoder(new geocodingLib.Geocoder());
+//     }
+//   }, [geocodingLib]);
+
+
+//   // Effect: Instantiate the MapController.
+//   // This runs once all necessary map libraries and the map element itself are
+//   // loaded and available, creating a centralized controller for all map interactions.
+//   useEffect(() => {
+//     if (map && maps3dLib && elevationLib) {
+//       mapController.current = new MapController({
+//         map,
+//         maps3dLib,
+//         elevationLib,
+//       });
+//     }
+//     // Invalidate the controller if its dependencies change.
+//     return () => {
+//       mapController.current = null;
+//     };
+//   }, [map, maps3dLib, elevationLib]);
+
+
+//   // Effect: Calculate responsive padding.
+//   // This effect observes the size of the console and control tray to calculate
+//   // padding values. These values represent how much of the viewport is
+//   // covered by UI, ensuring that when the map frames content, nothing is hidden.
+//   // See `lib/look-at.ts` for how this padding is used.
+//   useEffect(() => {
+//     const calculatePadding = () => {
+//       const consoleEl = consolePanelRef.current;
+//       const trayEl = controlTrayRef.current;
+//       const vh = window.innerHeight;
+//       const vw = window.innerWidth;
+
+
+//       if (!consoleEl || !trayEl) return;
+
+
+//       const isMobile = window.matchMedia('(max-width: 768px)').matches;
+
+//       const top = 0.05;
+//       const right = 0.05;
+//       let bottom = 0.05;
+//       let left = 0.05;
+
+
+//       if (!isMobile) {
+//           // On desktop, console is on the left. The tray is now inside it.
+//           left = Math.max(left, (consoleEl.offsetWidth / vw) + 0.02); // add 2% buffer
+//           // The tray no longer covers the bottom of the map on desktop.
+//       }
+
+//       setPadding([top, right, bottom, left]);
+//     };
+
+
+//     // Use ResizeObserver for more reliable updates on the elements themselves.
+//     const observer = new ResizeObserver(calculatePadding);
+//     if (consolePanelRef.current) observer.observe(consolePanelRef.current);
+//     if (controlTrayRef.current) observer.observe(controlTrayRef.current);
+
+
+//     // Also listen to window resize
+//     window.addEventListener('resize', calculatePadding);
+
+
+//     // Initial calculation after a short delay to ensure layout is stable
+//     const timeoutId = setTimeout(calculatePadding, 100);
+
+
+//     return () => {
+//         window.removeEventListener('resize', calculatePadding);
+//         observer.disconnect();
+//         clearTimeout(timeoutId);
+//     };
+//   }, []);
+
+
+//   useEffect(() => {
+//     if (map) {
+//       const banner = document.querySelector(
+//         '.vAygCK-api-load-alpha-banner',
+//       ) as HTMLElement;
+//       if (banner) {
+//         banner.style.display = 'none';
+//       }
+//     }
+//   }, [map]);
+
+
+
+//   // Effect: Reactively render markers and routes on the map.
+//   // This is the core of the component's "reactive" nature. It listens for
+//   // changes to the `markers` array in the global Zustand store.
+//   // Whenever a tool updates this state, this effect triggers, commanding the
+//   // MapController to clear the map, add the new entities, and then
+//   // intelligently frame them all in the camera's view, respecting UI padding.
+//   useEffect(() => {
+//     if (!mapController.current) return;
+
+
+//     const controller = mapController.current;
+//     controller.clearMap();
+
+
+//     if (markers.length > 0) {
+//       controller.addMarkers(markers);
+//     }
+
+//     // Combine all points from markers for framing
+//     const markerPositions = markers.map(m => m.position);
+//     const allEntities = [...markerPositions].map(p => ({ position: p }));
+
+
+//     if (allEntities.length > 0 && !preventAutoFrame) {
+//       controller.frameEntities(allEntities, padding);
+//     }
+//   }, [markers, padding, preventAutoFrame]); // Re-run when markers or padding change
+
+
+
+//   // Effect: Reactively handle direct camera movement requests.
+//   // This effect listens for changes to `cameraTarget`. Tools can set this state
+//   // to request a direct camera flight to a specific location or view. Once the
+//   // flight is initiated, the target is cleared to prevent re-triggering.
+//   useEffect(() => {
+//     if (cameraTarget && mapController.current) {
+//       mapController.current.flyTo(cameraTarget);
+//       // Reset the target so it doesn't re-trigger on re-renders
+//       setCameraTarget(null);
+//       // After a direct camera flight, reset the auto-frame prevention flag
+//       // to ensure subsequent marker updates behave as expected.
+//       useMapStore.getState().setPreventAutoFrame(false);
+//     }
+//   }, [cameraTarget, setCameraTarget]);
+
+
+
+//   const handleCameraChange = useCallback((props: Map3DCameraProps) => {
+//       setViewProps(oldProps => ({...oldProps, ...props}));
+//     }, []);
+
+
+//   return (
+//     <LiveAPIProvider 
+//       apiKey={GEMINI_API_KEY} 
+//       map={map} 
+//       placesLib={placesLib}
+//       elevationLib={elevationLib}
+//       geocoder={geocoder}
+//       padding={padding}
+//     >
+//         <ErrorScreen />
+//         <Sidebar />
+//         <div className="app-layout">
+//           <div className="form-panel">
+//             <AgriculturalForm />
+//             <div className="control-panel" ref={consolePanelRef}>
+//               <ControlTray trayRef={controlTrayRef} />
+//             </div>
+//           </div>
+//           <div className="map-panel">
+//               <Map3D
+//                 ref={element => setMap(element ?? null)}
+//                 onCameraChange={handleCameraChange}
+//                 {...viewProps}>
+//               </Map3D>
+//           </div>
+//         </div>
+//     </LiveAPIProvider>
+//   );
+// }
+
 function AppComponent() {
   const [map, setMap] = useState<google.maps.maps3d.Map3DElement | null>(null);
   const placesLib = useMapsLibrary('places');
   const geocodingLib = useMapsLibrary('geocoding');
   const [geocoder, setGeocoder] = useState<google.maps.Geocoder | null>(null);
   const [viewProps, setViewProps] = useState(INITIAL_VIEW_PROPS);
-  // Subscribe to marker and camera state from the global Zustand store.
   const { markers, cameraTarget, setCameraTarget, preventAutoFrame } = useMapStore();
   const mapController = useRef<MapController | null>(null);
-
-
   const maps3dLib = useMapsLibrary('maps3d');
   const elevationLib = useMapsLibrary('elevation');
-
-
   const consolePanelRef = useRef<HTMLDivElement>(null);
   const controlTrayRef = useRef<HTMLElement>(null);
-  // Padding state is used to ensure map content isn't hidden by UI elements.
   const [padding, setPadding] = useState<[number, number, number, number]>([0.05, 0.05, 0.05, 0.05]);
 
-
-  // Effect: Instantiate the Geocoder once the library is loaded.
   useEffect(() => {
-    if (geocodingLib) {
-      setGeocoder(new geocodingLib.Geocoder());
-    }
+    if (geocodingLib) setGeocoder(new geocodingLib.Geocoder());
   }, [geocodingLib]);
 
-
-  // Effect: Instantiate the MapController.
-  // This runs once all necessary map libraries and the map element itself are
-  // loaded and available, creating a centralized controller for all map interactions.
   useEffect(() => {
     if (map && maps3dLib && elevationLib) {
-      mapController.current = new MapController({
-        map,
-        maps3dLib,
-        elevationLib,
-      });
+      mapController.current = new MapController({ map, maps3dLib, elevationLib });
     }
-    // Invalidate the controller if its dependencies change.
     return () => {
       mapController.current = null;
     };
   }, [map, maps3dLib, elevationLib]);
 
-
-  // Effect: Calculate responsive padding.
-  // This effect observes the size of the console and control tray to calculate
-  // padding values. These values represent how much of the viewport is
-  // covered by UI, ensuring that when the map frames content, nothing is hidden.
-  // See `lib/look-at.ts` for how this padding is used.
   useEffect(() => {
     const calculatePadding = () => {
       const consoleEl = consolePanelRef.current;
       const trayEl = controlTrayRef.current;
-      const vh = window.innerHeight;
       const vw = window.innerWidth;
-
-
       if (!consoleEl || !trayEl) return;
-
-
       const isMobile = window.matchMedia('(max-width: 768px)').matches;
-
-      const top = 0.05;
-      const right = 0.05;
-      let bottom = 0.05;
       let left = 0.05;
-
-
-      if (!isMobile) {
-          // On desktop, console is on the left. The tray is now inside it.
-          left = Math.max(left, (consoleEl.offsetWidth / vw) + 0.02); // add 2% buffer
-          // The tray no longer covers the bottom of the map on desktop.
-      }
-
-      setPadding([top, right, bottom, left]);
+      if (!isMobile) left = Math.max(left, (consoleEl.offsetWidth / vw) + 0.02);
+      setPadding([0.05, 0.05, 0.05, left]);
     };
-
-
-    // Use ResizeObserver for more reliable updates on the elements themselves.
     const observer = new ResizeObserver(calculatePadding);
     if (consolePanelRef.current) observer.observe(consolePanelRef.current);
     if (controlTrayRef.current) observer.observe(controlTrayRef.current);
-
-
-    // Also listen to window resize
     window.addEventListener('resize', calculatePadding);
-
-
-    // Initial calculation after a short delay to ensure layout is stable
     const timeoutId = setTimeout(calculatePadding, 100);
-
-
     return () => {
-        window.removeEventListener('resize', calculatePadding);
-        observer.disconnect();
-        clearTimeout(timeoutId);
+      window.removeEventListener('resize', calculatePadding);
+      observer.disconnect();
+      clearTimeout(timeoutId);
     };
   }, []);
 
-
   useEffect(() => {
     if (map) {
-      const banner = document.querySelector(
-        '.vAygCK-api-load-alpha-banner',
-      ) as HTMLElement;
-      if (banner) {
-        banner.style.display = 'none';
-      }
+      const banner = document.querySelector('.vAygCK-api-load-alpha-banner') as HTMLElement;
+      if (banner) banner.style.display = 'none';
     }
   }, [map]);
 
-
-
-  // Effect: Reactively render markers and routes on the map.
-  // This is the core of the component's "reactive" nature. It listens for
-  // changes to the `markers` array in the global Zustand store.
-  // Whenever a tool updates this state, this effect triggers, commanding the
-  // MapController to clear the map, add the new entities, and then
-  // intelligently frame them all in the camera's view, respecting UI padding.
   useEffect(() => {
     if (!mapController.current) return;
-
-
     const controller = mapController.current;
     controller.clearMap();
-
-
-    if (markers.length > 0) {
-      controller.addMarkers(markers);
-    }
-
-    // Combine all points from markers for framing
-    const markerPositions = markers.map(m => m.position);
-    const allEntities = [...markerPositions].map(p => ({ position: p }));
-
-
+    if (markers.length > 0) controller.addMarkers(markers);
+    const allEntities = markers.map(m => ({ position: m.position }));
     if (allEntities.length > 0 && !preventAutoFrame) {
       controller.frameEntities(allEntities, padding);
     }
-  }, [markers, padding, preventAutoFrame]); // Re-run when markers or padding change
+  }, [markers, padding, preventAutoFrame]);
 
-
-
-  // Effect: Reactively handle direct camera movement requests.
-  // This effect listens for changes to `cameraTarget`. Tools can set this state
-  // to request a direct camera flight to a specific location or view. Once the
-  // flight is initiated, the target is cleared to prevent re-triggering.
   useEffect(() => {
     if (cameraTarget && mapController.current) {
       mapController.current.flyTo(cameraTarget);
-      // Reset the target so it doesn't re-trigger on re-renders
       setCameraTarget(null);
-      // After a direct camera flight, reset the auto-frame prevention flag
-      // to ensure subsequent marker updates behave as expected.
       useMapStore.getState().setPreventAutoFrame(false);
     }
   }, [cameraTarget, setCameraTarget]);
 
-
-
-  const handleCameraChange = useCallback((props: Map3DCameraProps) => {
-      setViewProps(oldProps => ({...oldProps, ...props}));
-    }, []);
-
+  const handleCameraChange = useCallback(
+    (props: Map3DCameraProps) => setViewProps(oldProps => ({ ...oldProps, ...props })),
+    []
+  );
 
   return (
-    <LiveAPIProvider 
-      apiKey={GEMINI_API_KEY} 
-      map={map} 
+    <LiveAPIProvider
+      apiKey={GEMINI_API_KEY}
+      map={map}
       placesLib={placesLib}
       elevationLib={elevationLib}
       geocoder={geocoder}
       padding={padding}
     >
-        <ErrorScreen />
-        <Sidebar />
-        <div className="app-layout">
-          <div className="form-panel">
-            <AgriculturalForm />
-            <div className="control-panel" ref={consolePanelRef}>
-              <ControlTray trayRef={controlTrayRef} />
+      <ErrorScreen />
+      <Sidebar />
+
+      {/* ✅ FULL-WIDTH INTRO MOVED ABOVE THE SPLIT LAYOUT */}
+      <section className="agriconnect-hero">
+        <div className="agriconnect-hero-content">
+          <h1 className="agriconnect-title">AgriConnect</h1>
+          <p className="agriconnect-subtitle">Smart Crop Recommendations</p>
+
+          <div className="agriconnect-description">
+            <h2>About AgriConnect Platform</h2>
+            <p>
+              AgriConnect uses advanced AI algorithms and environmental data to provide personalized crop
+              recommendations for your farm. Our system analyzes your location, soil type, climate
+              conditions, and seasonal patterns to suggest the most suitable crops for optimal yield.
+              <br /><br />
+              Sign in to get started and unlock data-driven insights that will help you make smarter
+              farming decisions.
+            </p>
+          </div>
+
+          <div className="agriconnect-feature-cards">
+            <div className="feature-card">
+              <div className="feature-icon">🌿</div>
+              <h3>Smart Analysis</h3>
+              <p>Data-driven insights for better farming decisions based on real-time environmental factors.</p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">📈</div>
+              <h3>Maximize Yield</h3>
+              <p>Optimize your harvest with tailored recommendations that suit your specific farm conditions.</p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">🌦️</div>
+              <h3>Climate Aware</h3>
+              <p>Recommendations based on local weather patterns and seasonal climate variations.</p>
             </div>
           </div>
-          <div className="map-panel">
-              <Map3D
-                ref={element => setMap(element ?? null)}
-                onCameraChange={handleCameraChange}
-                {...viewProps}>
-              </Map3D>
+        </div>
+      </section>
+
+      {/* ✅ ORIGINAL SPLIT LAYOUT BELOW */}
+      <div className="app-layout">
+        <div className="form-panel">
+          <AgriculturalForm />
+          <div className="control-panel" ref={consolePanelRef}>
+            <ControlTray trayRef={controlTrayRef} />
           </div>
         </div>
+
+        <div className="map-panel">
+          <Map3D
+            ref={element => setMap(element ?? null)}
+            onCameraChange={handleCameraChange}
+            {...viewProps}
+          />
+        </div>
+      </div>
     </LiveAPIProvider>
   );
 }
-
 
 
 /**

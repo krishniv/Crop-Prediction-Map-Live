@@ -1388,18 +1388,44 @@ gmp-place-details-compact {
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .app-layout {
+  /* .app-layout {
     flex-direction: column;
+  } */
+  .app-layout {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    overflow: hidden;
   }
   
-  .form-panel {
+  /* .form-panel {
     width: 100%;
     min-width: unset;
     height: 50vh;
+  } */
+  .form-panel {
+    width: 450px; /* or whatever your sidebar width is */
+    overflow-y: auto;
+    background-color: #081c16;
   }
   
-  .map-panel {
+  /* .map-panel {
     height: 50vh;
+  } */
+  .map-panel {
+    flex: 1;
+    position: relative;
+  }
+
+  .map-panel canvas,
+  .map-panel .gm-style,
+  .map-panel .map3d-container {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
   }
   
   .input-group {
