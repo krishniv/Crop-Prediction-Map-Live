@@ -393,16 +393,11 @@ function AppComponent() {
           <h1 className="brand-title">🌾 AgriConnect</h1>
           <p className="brand-subtitle">Smart Crop Recommendations</p>
         </div>
-
         <div className="header-right">
-          <button
-          className="signin-button"
-      onClick={() => setShowSignIn(true)}
-    >
-      👨‍🌾 Sign In / Sign Up
-    </button>
-  </div>
-</header>
+          <button className="news-button" onClick={() => window.open('https://news.google.com/search?q=agriculture+farming+news&hl=en-US', '_blank')}> 🗞️ Farm-o-Buzz </button>
+          <button className="signin-button" onClick={() => setShowSignIn(true)}> 👨‍🌾 Sign In / Sign Up </button>
+        </div>
+      </header>
 
 {/* Optional Modal for Sign In */}
 {showSignIn && (

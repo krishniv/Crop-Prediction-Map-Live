@@ -1710,7 +1710,7 @@ gmp-place-details-compact {
 .app-layout {
   display: flex;
   width: 100%;
-  height: calc(100vh - 270px); /* matches hero section height */
+  height: calc(100vh - 10vh); /* matches hero section height */
   background: #0a1913; /* ensure consistent background color */
   overflow: hidden;
 }
@@ -1834,6 +1834,13 @@ gmp-place-details-compact {
   z-index: 2000;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  gap: 15px;
+}
+
 .brand-title {
   font-size: 1.8rem;
   font-weight: 700;
@@ -1846,6 +1853,25 @@ gmp-place-details-compact {
   color: #b2d2c0;
   margin: 2px 0 0 4px;
 }
+
+/* 🟢 Farm-o-Buzz Button */
+.news-button {
+  background-color: #22c55e;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.news-button:hover {
+  background-color: #16a34a;
+  transform: translateY(-2px);
+}
+
 
 /* 🟢 Sign In Button */
 .signin-button {
