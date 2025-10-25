@@ -22,6 +22,7 @@ import React, { useState, FormEvent } from 'react';
 import { AgriculturalParameters, fetchAgriculturalRecommendations } from '@/lib/maps-grounding';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import './AgriculturalForm.css';
 
 interface AgriculturalFormProps {
   onSubmit?: (params: AgriculturalParameters) => void;
@@ -49,13 +50,13 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
   const handleInputChange = (field: keyof AgriculturalParameters, value: any) => {
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    
+
     // Validate required fields
     if (!formData.latitude || !formData.longitude) {
       setError('Please enter valid latitude and longitude coordinates');
@@ -79,7 +80,7 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
     try {
       // Call the agricultural recommendation API directly
       const result = await fetchAgriculturalRecommendations(formData);
-      
+
       // Extract the text response from the API result
       const responseText = result.candidates?.[0]?.content?.parts?.[0]?.text || 'No recommendations available';
       setResponse(responseText);
@@ -98,6 +99,48 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
 
   return (
     <div className="agricultural-form">
+      {/* 🌾 AgriConnect Full-Width Intro Section */}
+      <section className="agriconnect-hero">
+        <div className="agriconnect-hero-content">
+          <h1 className="agriconnect-title">AgriConnect</h1>
+          <p className="agriconnect-subtitle">Smart Crop Recommendations</p>
+
+          <div className="agriconnect-description">
+            <h2>About AgriConnect Platform</h2>
+            <p>
+              AgriConnect uses advanced AI algorithms and environmental data to provide personalized crop
+              recommendations for your farm. Our system analyzes your location, soil type, climate
+              conditions, and seasonal patterns to suggest the most suitable crops for optimal yield.
+              <br />
+              <br />
+              Sign in to get started and unlock data-driven insights that will help you make smarter
+              farming decisions.
+            </p>
+          </div>
+
+          <div className="agriconnect-feature-cards">
+            <div className="feature-card">
+              <div className="feature-icon">🌿</div>
+              <h3>Smart Analysis</h3>
+              <p>Data-driven insights for better farming decisions based on real-time environmental factors.</p>
+            </div>
+
+            <div className="feature-card">
+              <div className="feature-icon">📈</div>
+              <h3>Maximize Yield</h3>
+              <p>Optimize your harvest with tailored recommendations that suit your specific farm conditions.</p>
+            </div>
+
+            <div className="feature-card">
+              <div className="feature-icon">🌦️</div>
+              <h3>Climate Aware</h3>
+              <p>Recommendations based on local weather patterns and seasonal climate variations.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Existing header */}
       <div className="form-header">
         <h2>🌱 Agricultural Crop Recommendations</h2>
         <p>Get AI-powered crop recommendations based on your farm location and conditions.</p>
@@ -195,7 +238,7 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
           >
             {showOptional ? '▼' : '▶'} Optional Parameters
           </button>
-          
+
           {showOptional && (
             <div className="optional-params">
               <div className="input-group">
