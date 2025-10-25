@@ -248,20 +248,44 @@ export interface MapMarker {
   placeId?: string;
 }
 
+export interface MapRectangularOverlay {
+  center: {
+    lat: number;
+    lng: number;
+    altitude: number;
+  };
+  corners: {
+    northEast: { lat: number; lng: number; altitude: number };
+    northWest: { lat: number; lng: number; altitude: number };
+    southEast: { lat: number; lng: number; altitude: number };
+    southWest: { lat: number; lng: number; altitude: number };
+  };
+  width: number; // in meters
+  height: number; // in meters
+  label: string;
+  color: string;
+}
+
 export const useMapStore = create<{
   markers: MapMarker[];
+  rectangularOverlays: MapRectangularOverlay[];
   cameraTarget: Map3DCameraProps | null;
   preventAutoFrame: boolean;
   setMarkers: (markers: MapMarker[]) => void;
   clearMarkers: () => void;
+  setRectangularOverlays: (overlays: MapRectangularOverlay[]) => void;
+  clearRectangularOverlays: () => void;
   setCameraTarget: (target: Map3DCameraProps | null) => void;
   setPreventAutoFrame: (prevent: boolean) => void;
 }>(set => ({
   markers: [],
+  rectangularOverlays: [],
   cameraTarget: null,
   preventAutoFrame: false,
   setMarkers: markers => set({ markers }),
   clearMarkers: () => set({ markers: [] }),
+  setRectangularOverlays: overlays => set({ rectangularOverlays: overlays }),
+  clearRectangularOverlays: () => set({ rectangularOverlays: [] }),
   setCameraTarget: target => set({ cameraTarget: target }),
   setPreventAutoFrame: prevent => set({ preventAutoFrame: prevent }),
 }));

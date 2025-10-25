@@ -25,7 +25,7 @@
 
 import { Map3DCameraProps } from '@/components/map-3d';
 import { lookAtWithPadding } from './look-at';
-import { MapMarker, useMapStore } from './state';
+import { MapMarker, MapRectangularOverlay, useMapStore } from './state';
 
 type MapControllerDependencies = {
   map: google.maps.maps3d.Map3DElement;
@@ -48,7 +48,7 @@ export class MapController {
   }
 
   /**
-   * Clears all child elements (like markers) from the map.
+   * Clears all child elements (like markers and overlays) from the map.
    */
   clearMap() {
     this.map.innerHTML = '';
@@ -84,6 +84,71 @@ export class MapController {
       });
       
       this.map.appendChild(marker);
+    }
+  }
+
+  /**
+   * Adds rectangular overlays to the map.
+   * @param overlays - An array of rectangular overlay data to be rendered.
+   */
+  addRectangularOverlays(overlays: MapRectangularOverlay[]) {
+    for (const overlayData of overlays) {
+      const { center, corners, color, label } = overlayData;
+      
+      // Create corner markers for the rectangle
+      const cornerPositions = [
+        corners.northEast,
+        corners.northWest, 
+        corners.southEast,
+        corners.southWest
+      ];
+      
+      // Create markers for each corner
+      cornerPositions.forEach((corner, index) => {
+        const cornerMarker = new this.maps3dLib.Marker3DInteractiveElement({
+          position: corner,
+          altitudeMode: 'RELATIVE_TO_MESH',
+          label: `Corner ${index + 1}`,
+          title: `Rectangle Corner ${index + 1}`,
+          drawsWhenOccluded: true,
+        });
+
+        // Style corner markers
+        cornerMarker.style.cursor = 'pointer';
+        cornerMarker.style.color = color;
+        cornerMarker.style.fontSize = '16px';
+        cornerMarker.style.fontWeight = 'bold';
+        
+        this.map.appendChild(cornerMarker);
+      });
+      
+      // Create center marker
+      const centerMarker = new this.maps3dLib.Marker3DInteractiveElement({
+        position: center,
+        altitudeMode: 'RELATIVE_TO_MESH',
+        label: label,
+        title: label,
+        drawsWhenOccluded: true,
+      });
+
+      // Style the center marker to be more prominent
+      centerMarker.style.cursor = 'pointer';
+      centerMarker.style.color = color;
+      centerMarker.style.fontSize = '20px';
+      centerMarker.style.fontWeight = 'bold';
+      
+      centerMarker.addEventListener('click', () => {
+        useMapStore.getState().setPreventAutoFrame(true);
+        useMapStore.getState().setCameraTarget({
+          center: { ...center, altitude: 500 },
+          range: Math.max(overlayData.width, overlayData.height) * 2,
+          tilt: 45,
+          heading: this.map.heading,
+          roll: 0,
+        });
+      });
+      
+      this.map.appendChild(centerMarker);
     }
   }
 

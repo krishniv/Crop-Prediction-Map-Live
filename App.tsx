@@ -283,7 +283,7 @@ function AppComponent() {
   const geocodingLib = useMapsLibrary('geocoding');
   const [geocoder, setGeocoder] = useState<google.maps.Geocoder | null>(null);
   const [viewProps, setViewProps] = useState(INITIAL_VIEW_PROPS);
-  const { markers, cameraTarget, setCameraTarget, preventAutoFrame } = useMapStore();
+  const { markers, rectangularOverlays, cameraTarget, setCameraTarget, preventAutoFrame } = useMapStore();
   const mapController = useRef<MapController | null>(null);
   const maps3dLib = useMapsLibrary('maps3d');
   const elevationLib = useMapsLibrary('elevation');
@@ -344,11 +344,23 @@ function AppComponent() {
     const controller = mapController.current;
     controller.clearMap();
     if (markers.length > 0) controller.addMarkers(markers);
-    const allEntities = markers.map(m => ({ position: m.position }));
+    if (rectangularOverlays.length > 0) controller.addRectangularOverlays(rectangularOverlays);
+    
+    // Combine all points from markers and overlays for framing
+    const markerPositions = markers.map(m => m.position);
+    const overlayPositions = rectangularOverlays.map(o => o.center);
+    const overlayCorners = rectangularOverlays.flatMap(o => [
+      o.corners.northEast,
+      o.corners.northWest,
+      o.corners.southEast,
+      o.corners.southWest
+    ]);
+    const allEntities = [...markerPositions, ...overlayPositions, ...overlayCorners].map(p => ({ position: p }));
+    
     if (allEntities.length > 0 && !preventAutoFrame) {
       controller.frameEntities(allEntities, padding);
     }
-  }, [markers, padding, preventAutoFrame]);
+  }, [markers, rectangularOverlays, padding, preventAutoFrame]);
 
   useEffect(() => {
     if (cameraTarget && mapController.current) {

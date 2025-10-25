@@ -366,12 +366,16 @@ import remarkGfm from 'remark-gfm';
 // import './AgriculturalForm.css';
 import './AgriculturalFormOverlay.css';
 import { createPortal } from 'react-dom';
+import { useMapStore } from '@/lib/state';
+import { calculateRectangleCorners, calculateRectangleDimensions } from '@/lib/rectangle-utils';
 
 interface AgriculturalFormProps {
   onSubmit?: (params: AgriculturalParameters) => void;
 }
 
 export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
+  const { setRectangularOverlays, clearRectangularOverlays } = useMapStore();
+  
   const [formData, setFormData] = useState<AgriculturalParameters>({
     latitude: 0,
     longitude: 0,
@@ -421,6 +425,38 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
     setResponse(null);
 
     try {
+      // Clear any existing rectangular overlays
+      clearRectangularOverlays();
+      
+      // Create a rectangular overlay for the farm location
+      const farmSize = formData.farmSize || 10; // Default to 10 hectares if not specified
+      
+      // Calculate rectangle dimensions
+      const dimensions = calculateRectangleDimensions(farmSize);
+      
+      // Calculate the 4 corner points of the rectangle
+      const corners = calculateRectangleCorners(
+        formData.latitude,
+        formData.longitude,
+        farmSize
+      );
+      
+      const rectangularOverlay = {
+        center: {
+          lat: formData.latitude,
+          lng: formData.longitude,
+          altitude: 0
+        },
+        corners: corners,
+        width: dimensions.width,
+        height: dimensions.height,
+        label: `Farm Location (${farmSize} hectares)`,
+        color: '#ff0000' // Red color as requested
+      };
+      
+      // Set the rectangular overlay on the map
+      setRectangularOverlays([rectangularOverlay]);
+      
       const result = await fetchAgriculturalRecommendations(formData);
       const responseText =
         result.candidates?.[0]?.content?.parts?.[0]?.text || 'No recommendations available';
