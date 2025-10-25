@@ -361,7 +361,7 @@ import React, { useState, FormEvent } from 'react';
 import { AgriculturalParameters, fetchAgriculturalRecommendations } from '@/lib/maps-grounding';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import './AgriculturalForm.css';
+// import './AgriculturalForm.css';
 
 interface AgriculturalFormProps {
   onSubmit?: (params: AgriculturalParameters) => void;
