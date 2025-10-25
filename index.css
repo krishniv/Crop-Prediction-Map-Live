@@ -1,3 +1,84 @@
+/* --- Core Agricultural App Layout --- */
+html, body, #root, .App {
+  background: #181c1f !important;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.app-layout {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  width: 100vw;
+  background: linear-gradient(
+    135deg,
+    var(--agricultural-dark-green) 0%,
+    var(--agricultural-green) 100%
+  );
+}
+
+.form-panel {
+  width: 420px;
+  min-width: 320px;
+  max-width: 420px;
+  height: 100vh;
+  background: var(--gray-900);
+  border-right: 1px solid #202020;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.map-panel {
+  flex: 1;
+  height: 100vh;
+  width: 100%;
+  background: var(--gray-800);
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.agricultural-form {
+  z-index: 1000;
+  padding: 24px;
+  background: #181c1f;
+  color: var(--text);
+}
+
+@media (max-width: 900px) {
+  .app-layout {
+    flex-direction: column !important;
+  }
+
+  .form-panel {
+    width: 100% !important;
+    height: 50vh !important;
+    border-right: none;
+    border-bottom: 1px solid #202020;
+  }
+
+  .map-panel {
+    width: 100% !important;
+    height: 50vh !important;
+  }
+
+  .agricultural-form {
+    padding: 16px;
+  }
+
+  .input-group {
+    grid-template-columns: 1fr;
+  }
+}
+
 body {
   margin: 0;
   font-family:
@@ -282,17 +363,6 @@ button .icon {
 gmp-place-details-compact {
       color-scheme: light;
 }
-
-.map-panel {
-  position: absolute;
-  left: 0;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1;
-  background: white;
-}
-
 
 .streaming-console a,
 .streaming-console a:visited,
@@ -1025,10 +1095,6 @@ gmp-place-details-compact {
     -webkit-backdrop-filter: blur(10px);
   }
 
-  .map-panel {
-    bottom: 60%;
-  }
-
   .control-tray {
     padding: 5px 5px 5px 5px;
   }
@@ -1098,13 +1164,6 @@ gmp-place-details-compact {
     border-top: none;
     border-right: 1px solid var(--border-stroke);
     transition: none;
-  }
-
-  .map-panel {
-    left: 50%;
-    right: 0;
-    top: 0;
-    bottom: 0;
   }
 
   .control-tray {
@@ -1185,35 +1244,7 @@ gmp-place-details-compact {
 }
 
 /* Agricultural Application Styles */
-.app-layout {
-  display: flex;
-  height: 100vh;
-  background: linear-gradient(135deg, var(--agricultural-dark-green) 0%, var(--agricultural-green) 100%);
-}
-
-.form-panel {
-  width: 40%;
-  min-width: 400px;
-  background: var(--gray-900);
-  border-right: 2px solid var(--agricultural-green);
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-}
-
-.map-panel {
-  flex: 1;
-  background: var(--gray-800);
-}
-
 /* Agricultural Form Styles */
-.agricultural-form {
-  z-index: 1000;
-  padding: 24px;
-  background: var(--gray-900);
-  color: var(--text);
-}
-
 .form-header {
   margin-bottom: 32px;
   text-align: center;
@@ -1388,25 +1419,8 @@ gmp-place-details-compact {
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .app-layout {
-    flex-direction: column;
-  }
-  
-  .form-panel {
-    width: 100%;
-    min-width: unset;
-    height: 50vh;
-  }
-  
-  .map-panel {
-    height: 50vh;
-  }
-  
   .input-group {
     grid-template-columns: 1fr;
   }
   
-  .agricultural-form {
-    padding: 16px;
   }
-}

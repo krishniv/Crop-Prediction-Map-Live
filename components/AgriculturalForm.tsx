@@ -24,7 +24,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 interface AgriculturalFormProps {
-  onSubmit?: (params: AgriculturalParameters) => void;
+  onSubmit?: (params: AgriculturalParameters, responseText: string) => void;
 }
 
 export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
@@ -40,10 +40,8 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
     farmSize: undefined,
     previousCrop: undefined,
   });
-
   const [showOptional, setShowOptional] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [response, setResponse] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (field: keyof AgriculturalParameters, value: any) => {
@@ -55,38 +53,29 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    
     // Validate required fields
     if (!formData.latitude || !formData.longitude) {
       setError('Please enter valid latitude and longitude coordinates');
       return;
     }
-
     if (formData.latitude < -90 || formData.latitude > 90) {
       setError('Latitude must be between -90 and 90 degrees');
       return;
     }
-
     if (formData.longitude < -180 || formData.longitude > 180) {
       setError('Longitude must be between -180 and 180 degrees');
       return;
     }
-
     setIsSubmitting(true);
     setError(null);
-    setResponse(null);
-
     try {
       // Call the agricultural recommendation API directly
       const result = await fetchAgriculturalRecommendations(formData);
-      
       // Extract the text response from the API result
       const responseText = result.candidates?.[0]?.content?.parts?.[0]?.text || 'No recommendations available';
-      setResponse(responseText);
-
-      // Call the optional onSubmit callback
+      // Call the optional onSubmit callback with both params and responseText
       if (onSubmit) {
-        onSubmit(formData);
+        onSubmit(formData, responseText);
       }
     } catch (error) {
       console.error('Error submitting agricultural form:', error);
@@ -97,18 +86,27 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
   };
 
   return (
-    <div className="agricultural-form">
-      <div className="form-header">
-        <h2>🌱 Agricultural Crop Recommendations</h2>
-        <p>Get AI-powered crop recommendations based on your farm location and conditions.</p>
+    <div className="agricultural-form" style={{
+      maxWidth: '100%',
+      width: '100%',
+      minWidth: 0,
+      boxSizing: 'border-box',
+      padding: '0 2vw',
+      margin: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'stretch',
+    }}>
+      <div className="form-header" style={{marginBottom: '1.5rem'}}>
+        <h2 style={{fontSize: '2rem', margin: 0}}>🌱 Agricultural Crop Recommendations</h2>
+        <p style={{margin: '0.5rem 0 0 0'}}>Get AI-powered crop recommendations based on your farm location and conditions.</p>
       </div>
-
-      <form onSubmit={handleSubmit} className="form-content">
+      <form onSubmit={handleSubmit} className="form-content" style={{width: '100%'}}>
         {/* Location Section */}
-        <div className="form-section">
-          <h3>📍 Farm Location</h3>
-          <div className="input-group">
-            <div className="input-field">
+        <div className="form-section" style={{marginBottom: '1.2rem'}}>
+          <h3 style={{margin: '0 0 0.5rem 0'}}>📍 Farm Location</h3>
+          <div className="input-group" style={{display: 'flex', gap: '1rem', flexWrap: 'wrap'}}>
+            <div className="input-field" style={{flex: 1, minWidth: 120}}>
               <label htmlFor="latitude">Latitude *</label>
               <input
                 type="number"
@@ -118,9 +116,10 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
                 placeholder="e.g., 40.7128"
                 step="any"
                 required
+                style={{width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #444'}}
               />
             </div>
-            <div className="input-field">
+            <div className="input-field" style={{flex: 1, minWidth: 120}}>
               <label htmlFor="longitude">Longitude *</label>
               <input
                 type="number"
@@ -130,22 +129,23 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
                 placeholder="e.g., -74.0060"
                 step="any"
                 required
+                style={{width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #444'}}
               />
             </div>
           </div>
         </div>
-
         {/* Required Parameters */}
-        <div className="form-section">
-          <h3>🌍 Required Parameters</h3>
-          <div className="input-group">
-            <div className="input-field">
+        <div className="form-section" style={{marginBottom: '1.2rem'}}>
+          <h3 style={{margin: '0 0 0.5rem 0'}}>🌍 Required Parameters</h3>
+          <div className="input-group" style={{display: 'flex', gap: '1rem', flexWrap: 'wrap'}}>
+            <div className="input-field" style={{flex: 1, minWidth: 120}}>
               <label htmlFor="soilType">Soil Type *</label>
               <select
                 id="soilType"
                 value={formData.soilType}
                 onChange={(e) => handleInputChange('soilType', e.target.value)}
                 required
+                style={{width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #444'}}
               >
                 <option value="clay">Clay</option>
                 <option value="sandy">Sandy</option>
@@ -154,13 +154,14 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
                 <option value="peat">Peat</option>
               </select>
             </div>
-            <div className="input-field">
+            <div className="input-field" style={{flex: 1, minWidth: 120}}>
               <label htmlFor="climate">Climate Zone *</label>
               <select
                 id="climate"
                 value={formData.climate}
                 onChange={(e) => handleInputChange('climate', e.target.value)}
                 required
+                style={{width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #444'}}
               >
                 <option value="tropical">Tropical</option>
                 <option value="arid">Arid</option>
@@ -169,13 +170,14 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
                 <option value="polar">Polar</option>
               </select>
             </div>
-            <div className="input-field">
+            <div className="input-field" style={{flex: 1, minWidth: 120}}>
               <label htmlFor="season">Season *</label>
               <select
                 id="season"
                 value={formData.season}
                 onChange={(e) => handleInputChange('season', e.target.value)}
                 required
+                style={{width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #444'}}
               >
                 <option value="spring">Spring</option>
                 <option value="summer">Summer</option>
@@ -185,21 +187,20 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
             </div>
           </div>
         </div>
-
         {/* Optional Parameters */}
-        <div className="form-section">
+        <div className="form-section" style={{marginBottom: '1.2rem'}}>
           <button
             type="button"
             className="toggle-optional"
             onClick={() => setShowOptional(!showOptional)}
+            style={{padding: '0.5rem 1rem', borderRadius: 6, background: '#2e7d32', color: '#fff', border: 'none', fontWeight: 500, marginBottom: '0.5rem'}}
           >
             {showOptional ? '▼' : '▶'} Optional Parameters
           </button>
-          
           {showOptional && (
             <div className="optional-params">
-              <div className="input-group">
-                <div className="input-field">
+              <div className="input-group" style={{display: 'flex', gap: '1rem', flexWrap: 'wrap'}}>
+                <div className="input-field" style={{flex: 1, minWidth: 120}}>
                   <label htmlFor="rainfall">Annual Rainfall (mm)</label>
                   <input
                     type="number"
@@ -208,9 +209,10 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
                     onChange={(e) => handleInputChange('rainfall', parseFloat(e.target.value) || undefined)}
                     placeholder="e.g., 800"
                     min="0"
+                    style={{width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #444'}}
                   />
                 </div>
-                <div className="input-field">
+                <div className="input-field" style={{flex: 1, minWidth: 120}}>
                   <label htmlFor="temperature">Average Temperature (°C)</label>
                   <input
                     type="number"
@@ -219,9 +221,10 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
                     onChange={(e) => handleInputChange('temperature', parseFloat(e.target.value) || undefined)}
                     placeholder="e.g., 25"
                     step="any"
+                    style={{width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #444'}}
                   />
                 </div>
-                <div className="input-field">
+                <div className="input-field" style={{flex: 1, minWidth: 120}}>
                   <label htmlFor="farmSize">Farm Size (hectares)</label>
                   <input
                     type="number"
@@ -231,21 +234,23 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
                     placeholder="e.g., 10"
                     min="0"
                     step="any"
+                    style={{width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #444'}}
                   />
                 </div>
               </div>
-              <div className="input-group">
-                <div className="input-field checkbox-field">
+              <div className="input-group" style={{display: 'flex', gap: '1rem', flexWrap: 'wrap'}}>
+                <div className="input-field checkbox-field" style={{flex: 1, minWidth: 120}}>
                   <label>
                     <input
                       type="checkbox"
                       checked={formData.irrigationAvailable || false}
                       onChange={(e) => handleInputChange('irrigationAvailable', e.target.checked)}
+                      style={{marginRight: '0.5rem'}}
                     />
                     Irrigation Available
                   </label>
                 </div>
-                <div className="input-field">
+                <div className="input-field" style={{flex: 1, minWidth: 120}}>
                   <label htmlFor="previousCrop">Previous Crop</label>
                   <input
                     type="text"
@@ -253,19 +258,20 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
                     value={formData.previousCrop || ''}
                     onChange={(e) => handleInputChange('previousCrop', e.target.value || undefined)}
                     placeholder="e.g., Wheat, Corn, Rice"
+                    style={{width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #444'}}
                   />
                 </div>
               </div>
             </div>
           )}
         </div>
-
         {/* Submit Button */}
-        <div className="form-actions">
+        <div className="form-actions" style={{marginTop: '1.2rem'}}>
           <button
             type="submit"
             className="submit-button"
             disabled={isSubmitting}
+            style={{padding: '0.7rem 1.5rem', borderRadius: 6, background: '#ffd600', color: '#222', border: 'none', fontWeight: 600, fontSize: '1rem'}}
           >
             {isSubmitting ? 'Getting Recommendations...' : '🌾 Get Crop Recommendations'}
           </button>
@@ -276,18 +282,7 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
           )}
         </div>
       </form>
-
-      {/* Response Section */}
-      {response && (
-        <div className="recommendations-section" style={{ marginTop: '20px', padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
-          <h3>🎯 Crop Recommendations</h3>
-          <div className="recommendation-content">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {response}
-            </ReactMarkdown>
-          </div>
-        </div>
-      )}
+      {/* Recommendation response is now shown as an overlay in the map panel */}
     </div>
   );
 }
