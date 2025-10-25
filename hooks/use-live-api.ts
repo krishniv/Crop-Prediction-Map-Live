@@ -25,11 +25,11 @@
 
 
 import { MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { GenAILiveClient } from '../../lib/genai-live-client';
+import { GenAILiveClient } from '../lib/genai-live-client';
 import { LiveConnectConfig, Modality, LiveServerToolCall } from '@google/genai';
-import { AudioStreamer } from '../../lib/audio-streamer';
-import { audioContext } from '../../lib/utils';
-import VolMeterWorket from '../../lib/worklets/vol-meter';
+import { AudioStreamer } from '../lib/audio-streamer';
+import { audioContext } from '../lib/utils';
+import VolMeterWorket from '../lib/worklets/vol-meter';
 import { useLogStore, useMapStore, useSettings } from '@/lib/state';
 import { GenerateContentResponse, GroundingChunk } from '@google/genai';
 import { ToolContext, toolRegistry } from '@/lib/tools/tool-registry';
