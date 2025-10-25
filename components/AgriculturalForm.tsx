@@ -357,11 +357,15 @@
  * limitations under the License.
  */
 
-import React, { useState, FormEvent } from 'react';
+// import React, { useState, FormEvent } from 'react';
+import React, { useState, FormEvent, useEffect } from 'react';
 import { AgriculturalParameters, fetchAgriculturalRecommendations } from '@/lib/maps-grounding';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 // import './AgriculturalForm.css';
+// import './AgriculturalForm.css';
+import './AgriculturalFormOverlay.css';
+import { createPortal } from 'react-dom';
 
 interface AgriculturalFormProps {
   onSubmit?: (params: AgriculturalParameters) => void;
@@ -430,7 +434,42 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
     }
   };
 
+    // Track the map container element so we can render the response overlay into it
+  const [mapContainer, setMapContainer] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    // Try to find the map panel in the page
+    const el = document.querySelector('.map-panel') as HTMLElement | null;
+    if (el) setMapContainer(el);
+  }, []);
+
+  // If the map panel wasn't present at mount (rare), re-check when response changes.
+  useEffect(() => {
+    if (!mapContainer && response) {
+      const el = document.querySelector('.map-panel') as HTMLElement | null;
+      if (el) setMapContainer(el);
+    }
+  }, [response, mapContainer]);
+
+  const overlayPortal =
+    response && mapContainer
+      ? createPortal(
+          <div className="map-overlay-recommendations" role="dialog" aria-live="polite">
+            <div className="overlay-inner">
+              <div className="overlay-header">
+                <h3>🎯 Crop Recommendations</h3>
+              </div>
+              <div className="recommendation-content">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{response}</ReactMarkdown>
+              </div>
+            </div>
+          </div>,
+          mapContainer
+        )
+      : null;
+
   return (
+    <>
       <div className="agricultural-form">
         <div className="form-header">
           <h2>🌱 Agricultural Crop Recommendations</h2>
@@ -621,24 +660,9 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
           </div>
         </form>
 
-        {/* Response Section */}
-        {response && (
-          <div
-            className="recommendations-section"
-            style={{
-              marginTop: '20px',
-              padding: '20px',
-              backgroundColor: '#f5f5f5',
-              borderRadius: '8px',
-            }}
-          >
-            <h3>🎯 Crop Recommendations</h3>
-            <div className="recommendation-content">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{response}</ReactMarkdown>
-            </div>
-          </div>
-        )}
-      </div>
+       </div>
+      {overlayPortal}
+    </>
   );
 }
 

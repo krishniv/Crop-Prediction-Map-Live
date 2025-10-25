@@ -290,7 +290,12 @@ function AppComponent() {
   const consolePanelRef = useRef<HTMLDivElement>(null);
   const controlTrayRef = useRef<HTMLElement>(null);
   const [padding, setPadding] = useState<[number, number, number, number]>([0.05, 0.05, 0.05, 0.05]);
-
+  const [showSignIn, setShowSignIn] = useState(false);
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    alert("Login successful!");
+    setShowSignIn(false);
+  };
   useEffect(() => {
     if (geocodingLib) setGeocoder(new geocodingLib.Geocoder());
   }, [geocodingLib]);
@@ -370,11 +375,48 @@ function AppComponent() {
       <ErrorScreen />
       <Sidebar />
 
+      {/* 🌾 AgriConnect Header with Sign In */}
+      <header className="agriconnect-header">
+        <div className="header-left">
+          <h1 className="brand-title">🌾 AgriConnect</h1>
+          <p className="brand-subtitle">Smart Crop Recommendations</p>
+        </div>
+
+        <div className="header-right">
+          <button
+          className="signin-button"
+      onClick={() => setShowSignIn(true)}
+    >
+      👨‍🌾 Sign In / Sign Up
+    </button>
+  </div>
+</header>
+
+{/* Optional Modal for Sign In */}
+{showSignIn && (
+  <div className="signin-modal">
+    <div className="signin-card">
+      <h2>👨‍🌾 Farmer Login</h2>
+      <form onSubmit={handleLogin}>
+        <label>Email</label>
+        <input type="email" placeholder="farmer@email.com" required />
+        <label>Password</label>
+        <input type="password" placeholder="Enter password" required />
+        <button type="submit" className="login-btn">Sign In</button>
+        <p className="register-text">
+          New user? <a href="#">Create Account</a>
+        </p>
+      </form>
+      <button className="close-modal" onClick={() => setShowSignIn(false)}>✕</button>
+    </div>
+  </div>
+)}
+
       {/* ✅ FULL-WIDTH INTRO MOVED ABOVE THE SPLIT LAYOUT */}
       <section className="agriconnect-hero">
         <div className="agriconnect-hero-content">
-          <h1 className="agriconnect-title">AgriConnect</h1>
-          <p className="agriconnect-subtitle">Smart Crop Recommendations</p>
+          {/* <h1 className="agriconnect-title">AgriConnect</h1>
+          <p className="agriconnect-subtitle">Smart Crop Recommendations</p> */}
 
           <div className="agriconnect-description">
             <h2>About AgriConnect Platform</h2>

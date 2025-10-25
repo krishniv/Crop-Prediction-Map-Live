@@ -1753,3 +1753,195 @@ gmp-place-details-compact {
 .app-layout::before {
   content: none !important; /* remove decorative divider if present */
 }
+
+/* 🌾 Overlay container on top of the map */
+.map-overlay {
+  position: absolute;
+  top: 40px;
+  left: 40px;
+  z-index: 9999;
+  max-width: 480px;
+  background: rgba(8, 24, 18, 0.9);
+  border: 1px solid rgba(103, 240, 156, 0.3);
+  border-radius: 16px;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
+  color: #e6f5ea;
+  padding: 20px 24px;
+  overflow-y: auto;
+  backdrop-filter: blur(8px);
+}
+
+/* Ensure it works well with map */
+.map-panel {
+  position: relative;
+}
+
+/* Title */
+.recommendations-card h3 {
+  color: #67f09c;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(103, 240, 156, 0.3);
+  padding-bottom: 8px;
+}
+
+/* Markdown text styling */
+.recommendation-content {
+  color: #e0f6e8;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.recommendation-content strong {
+  color: #a3ffcf;
+}
+
+.recommendation-content em {
+  color: #b5e9d3;
+}
+
+/* Optional: add scroll behavior if output is long */
+.map-overlay::-webkit-scrollbar {
+  width: 6px;
+}
+.map-overlay::-webkit-scrollbar-thumb {
+  background: rgba(103, 240, 156, 0.4);
+  border-radius: 3px;
+}
+
+/* Optional responsive adjustment */
+@media (max-width: 768px) {
+  .map-overlay {
+    top: auto;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: none;
+  }
+}
+.agriconnect-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 40px;
+  background: #03241b;
+  border-bottom: 1px solid rgba(103, 240, 156, 0.2);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  position: sticky;
+  top: 0;
+  z-index: 2000;
+}
+
+.brand-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #67f09c;
+  margin: 0;
+}
+
+.brand-subtitle {
+  font-size: 0.95rem;
+  color: #b2d2c0;
+  margin: 2px 0 0 4px;
+}
+
+/* 🟢 Sign In Button */
+.signin-button {
+  background-color: #22c55e;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.signin-button:hover {
+  background-color: #16a34a;
+  transform: translateY(-2px);
+}
+
+/* 🧩 Modal Styling */
+.signin-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 5000;
+  backdrop-filter: blur(4px);
+}
+
+.signin-card {
+  background: #0a2b1f;
+  border: 1px solid rgba(103, 240, 156, 0.3);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  width: 380px;
+  padding: 28px;
+  position: relative;
+  color: #e0f6e8;
+}
+
+.signin-card h2 {
+  text-align: center;
+  color: #67f09c;
+  margin-bottom: 20px;
+}
+
+.signin-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.signin-card input {
+  background: #082218;
+  color: #e0f6e8;
+  border: 1px solid rgba(103, 240, 156, 0.3);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.login-btn {
+  background: #22c55e;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.login-btn:hover {
+  background: #16a34a;
+}
+
+.register-text {
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.register-text a {
+  color: #67f09c;
+  text-decoration: none;
+}
+
+.close-modal {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.3rem;
+  cursor: pointer;
+}
