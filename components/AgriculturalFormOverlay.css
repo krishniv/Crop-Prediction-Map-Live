@@ -37,6 +37,52 @@
   color: inherit;
 }
 
+/* JSON pretty styles */
+.json-root {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.json-section h4 {
+  margin: 0 0 6px 0;
+  font-size: 1rem;
+  color: #0b3b2e;
+}
+.json-section .json-value {
+  margin: 0;
+  color: #111;
+}
+.crop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.crop-card {
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.06);
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+.crop-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.crop-name { font-size: 1rem; color: #062e1f; }
+.crop-alloc { font-size: 0.85rem; color: #065f46; background: rgba(6,95,70,0.08); padding: 2px 6px; border-radius: 6px; }
+.crop-rationale { margin: 0 0 8px 0; color: #111; }
+.kv-list { padding-left: 16px; margin: 6px 0; }
+.kv-list li { margin-bottom: 6px; }
+.kv-key { font-weight: 600; color: #0b3b2e; }
+.kv-val { color: #111; }
+.kv-row { display: flex; gap: 8px; margin-bottom: 6px; }
+.kv-key.small { min-width: 120px; font-weight: 600; }
+.kv-val.small { color: #222; }
+.challenge-list { padding-left: 18px; }
+.challenge-list li { margin-bottom: 8px; }
+
 .map-overlay-recommendations .overlay-header {
   cursor: move;
   padding-bottom: 6px;

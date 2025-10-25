@@ -788,9 +788,170 @@ function DraggableResizableOverlay({
         </div>
 
         <div className="recommendation-content" style={{ overflow: 'auto', flex: '1 1 auto' }} onPointerUp={onResizeEnd}>
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{response}</ReactMarkdown>
+          <FormattedJsonOrMarkdown text={response} />
         </div>
       </div>
+    </div>
+  );
+}
+
+function FormattedJsonOrMarkdown({ text }: { text: string }) {
+  // Try multiple heuristics to recover JSON from the assistant response.
+  const tryParse = (candidate: string) => {
+    try {
+      return JSON.parse(candidate);
+    } catch (e) {
+      return null;
+    }
+  };
+
+  // 1) direct parse
+  let parsed = tryParse(text);
+  if (!parsed) {
+    // 2) strip code fences ```json ... ``` or ``` ... ```
+    const fenceMatch = text.match(/```(?:json\n)?([\s\S]*?)```/i);
+    if (fenceMatch && fenceMatch[1]) {
+      parsed = tryParse(fenceMatch[1].trim());
+    }
+  }
+
+  if (!parsed) {
+    // 3) extract first {...} block
+    const firstOpen = text.indexOf('{');
+    const lastClose = text.lastIndexOf('}');
+    if (firstOpen !== -1 && lastClose !== -1 && lastClose > firstOpen) {
+      const sub = text.slice(firstOpen, lastClose + 1);
+      parsed = tryParse(sub);
+    }
+  }
+
+  if (!parsed) {
+    // 4) Sometimes the assistant returns a JSON string (escaped) inside quotes
+    const trimmed = text.trim();
+    if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+      try {
+        const unquoted = JSON.parse(trimmed);
+        parsed = tryParse(unquoted);
+      } catch (e) {
+        // ignore
+      }
+    }
+  }
+
+  if (parsed) {
+    return <PrettyJson data={parsed} />;
+  }
+
+  // fallback: render markdown/raw text
+  return <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>;
+}
+
+function PrettyJson({ data }: { data: any }) {
+  // Render top-level sections with nicer layout
+  return (
+    <div className="json-root">
+      {data.location_description && (
+        <section className="json-section">
+          <h4>Location Overview</h4>
+          <p className="json-value">{data.location_description}</p>
+        </section>
+      )}
+
+      {Array.isArray(data.recommended_crops) && (
+        <section className="json-section">
+          <h4>Recommended Crops</h4>
+          <div className="crop-list">
+            {data.recommended_crops.map((c: any, idx: number) => (
+              <article key={idx} className="crop-card">
+                <div className="crop-card-header">
+                  <strong className="crop-name">{c.crop_name}</strong>
+                  {c.percentage_area_allocation && (
+                    <span className="crop-alloc">{c.percentage_area_allocation}</span>
+                  )}
+                </div>
+                {c.rationale && <p className="crop-rationale">{c.rationale}</p>}
+                <div className="kv-grid">
+                  {c.intercropping_options && (
+                    <div className="kv-row">
+                      <div className="kv-key">Intercropping</div>
+                      <div className="kv-val">{c.intercropping_options}</div>
+                    </div>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {data.expected_yield_estimates && (
+        <section className="json-section">
+          <h4>Expected Yield Estimates</h4>
+          <ul className="kv-list">
+            {Object.entries(data.expected_yield_estimates).map(([k, v]) => (
+              <li key={k}>
+                <span className="kv-key">{k.replace(/_/g, ' ')}:</span>{' '}
+                <span className="kv-val">{String(v)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {data.soil_preparation_requirements && (
+        <section className="json-section">
+          <h4>Soil Preparation</h4>
+          <div className="kv-list">
+            {Object.entries(data.soil_preparation_requirements).map(([k, v]) => (
+              <div key={k} className="kv-row">
+                <div className="kv-key">{k.replace(/_/g, ' ')}:</div>
+                <div className="kv-val">{String(v)}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {data.water_and_fertilizer_needs && (
+        <section className="json-section">
+          <h4>Water & Fertilizer</h4>
+          <div className="kv-list">
+            {Object.entries(data.water_and_fertilizer_needs).map(([k, v]) => (
+              <div key={k} className="kv-row">
+                <div className="kv-key">{k.replace(/_/g, ' ')}:</div>
+                <div className="kv-val">
+                  {typeof v === 'object' ? (
+                    <div className="sub-kv">
+                      {Object.entries(v).map(([kk, vv]) => (
+                        <div key={kk} className="kv-row">
+                          <div className="kv-key small">{kk}:</div>
+                          <div className="kv-val small">{String(vv)}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    String(v)
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {Array.isArray(data.potential_challenges_and_mitigation_strategies) && (
+        <section className="json-section">
+          <h4>Potential Challenges & Mitigation</h4>
+          <ol className="challenge-list">
+            {data.potential_challenges_and_mitigation_strategies.map((c: any, i: number) => (
+              <li key={i}>
+                <strong>{c.challenge}</strong>
+                <div className="kv-val">{c.mitigation}</div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
     </div>
   );
 }
