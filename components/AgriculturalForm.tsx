@@ -450,7 +450,7 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
         corners: corners,
         width: dimensions.width,
         height: dimensions.height,
-        label: `Farm Location (${farmSize} hectares)`,
+        // label: `Farm Location (${farmSize} hectares)`,
         color: '#ff0000' // Red color as requested
       };
       
