@@ -53,9 +53,9 @@ export const agriculturalTools = [
           type: 'number', 
           description: 'Farm size in hectares (optional)' 
         },
-        previousCrop: { 
+        multiCrop: { 
           type: 'string', 
-          description: 'Previously grown crop (optional)' 
+          description: 'Is open for multiple crops? (optional)' 
         }
       },
       required: ['latitude', 'longitude', 'soilType', 'climate', 'season']
