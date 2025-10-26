@@ -661,35 +661,53 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
                       step="any"
                     />
                   </div> */}
-                  <div className="input-field">
-  <label htmlFor="multiCrop">Multi Crop</label>
-  <select
-    id="multiCrop"
-    value={formData.multiCrop || ''}
-    onChange={(e) => handleInputChange('multiCrop', e.target.value)}
-    required
+                <div
+  className="input-group"
+  style={{
+    display: 'flex',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    gap: '40px',
+  }}
+>
+  {/* Left: Multi Crop */}
+  <div className="input-field" style={{ flex: 1 }}>
+    <label htmlFor="multiCrop">Multi Crop</label>
+    <select
+      id="multiCrop"
+      value={formData.multiCrop || ''}
+      onChange={(e) => handleInputChange('multiCrop', e.target.value)}
+      required
+      style={{
+        width: '180%',
+        height: '40px',
+        borderRadius: '6px'
+      }}
+    >
+      <option value="">Select</option>
+      <option value="Yes">Yes</option>
+      <option value="No">No</option>
+    </select>
+  </div>
+
+  {/* Right: Irrigation Available */}
+  <div
+    className="input-field checkbox-field"
+    style={{ flex: 1, display: 'flex', alignItems: 'right', marginTop: '16px' }}
   >
-    <option value="">Select</option>
-    <option value="Yes">Yes</option>
-    <option value="No">No</option>
-  </select>
+    <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <input
+        type="checkbox"
+        checked={formData.irrigationAvailable || false}
+        onChange={(e) =>
+          handleInputChange('irrigationAvailable', e.target.checked)
+        }
+      />
+      Irrigation Available
+    </label>
+  </div>
 </div>
 
-                </div>
-                <div className="input-group">
-                  <div className="input-field checkbox-field">
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={formData.irrigationAvailable || false}
-                        onChange={(e) =>
-                          handleInputChange('irrigationAvailable', e.target.checked)
-                        }
-                      />
-                      Irrigation Available
-                    </label>
-                  </div>
-                  
                 </div>
               </div>
             )}

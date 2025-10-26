@@ -289,8 +289,8 @@ function AppComponent() {
               recommendations for your farm. Our system analyzes your location, soil type, climate
               conditions, and seasonal patterns to suggest the most suitable crops for optimal yield.
               <br /><br />
-              Sign in to get started and unlock data-driven insights that will help you make smarter
-              farming decisions.
+              {/* Sign in to get started and unlock data-driven insights that will help you make smarter
+              farming decisions. */}
             </p>
           </div>
 
