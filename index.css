@@ -1631,13 +1631,13 @@ gmp-place-details-compact {
   background: linear-gradient(180deg, #14251f 0%, #1a3a31 100%);
   color: #e0f6e8;
 
-  display: flex;                 /* enables centering */
-  flex-direction: column;        /* stack title & paragraph */
-  justify-content: center;       /* vertical centering */
-  align-items: center;           /* horizontal centering */
+  display: flex;                 
+  flex-direction: column;        
+  justify-content: center;       
+  align-items: center;           
 
-  text-align: center;            /* center text alignment */
-  padding: 100px 80px;           /* more balanced vertical spacing */
+  text-align: center;            
+  padding: 100px 80px;           
   margin: 0;
   border: none;
   box-shadow: none;
@@ -1663,17 +1663,17 @@ gmp-place-details-compact {
 }
 
 .agriconnect-feature-cards {
-  display: flex;                    /* horizontal layout */
-  justify-content: center;          /* center all cards horizontally */
-  align-items: stretch;             /* make them same height */
-  gap: 30px;                        /* even space between cards */
-  flex-wrap: nowrap;                /* 🔥 keep all cards on one line */
+  display: flex;                    
+  justify-content: center;          
+  align-items: stretch;             
+  gap: 30px;                        
+  flex-wrap: nowrap;               
   margin-top: 60px;
 }
 
 .feature-card {
-  flex: 1 1 300px;                  /* responsive width, but same proportion */
-  max-width: 320px;                 /* keep uniform size */
+  flex: 1 1 300px;                  
+  max-width: 320px;                
   background: #0f241d;
   border: 1px solid rgba(103, 240, 156, 0.15);
   border-radius: 16px;

@@ -552,6 +552,8 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
                     handleInputChange('latitude', parseFloat(e.target.value) || 0)
                   }
                   placeholder="e.g., 40.7128"
+                  min="-90"
+                  max="90"
                   step="any"
                   required
                 />
@@ -566,6 +568,8 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
                     handleInputChange('longitude', parseFloat(e.target.value) || 0)
                   }
                   placeholder="e.g., -74.0060"
+                  min="-180"
+                  max="180"
                   step="any"
                   required
                 />
@@ -595,11 +599,15 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
         onChange={(e) => handleInputChange('soilType', e.target.value)}
         required
       >
+        <option value="" disabled hidden>
+          Select soil type
+        </option>
         <option value="clay">Clay</option>
         <option value="sandy">Sandy</option>
+        <option value="silty">Silty</option>
+        <option value="peaty">Peaty</option>
+        <option value="chalky">Chalky</option>
         <option value="loamy">Loamy</option>
-        <option value="silt">Silt</option>
-        <option value="peat">Peat</option>
       </select>
     </div>
 
@@ -709,7 +717,7 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
             borderRadius: '6px',
           }}
         >
-          <option value="">Select</option>
+          {/* <option value="">Yes</option> */}
           <option value="Yes">Yes</option>
           <option value="No">No</option>
         </select>
