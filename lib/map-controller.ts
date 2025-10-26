@@ -1,11 +1,6 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
-*/
-
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
  */
 /**
  * Copyright 2024 Google LLC
@@ -62,15 +57,23 @@ export class MapController {
     for (const markerData of markers) {
       const marker = new this.maps3dLib.Marker3DInteractiveElement({
         position: markerData.position,
-        altitudeMode: 'RELATIVE_TO_MESH',
+        altitudeMode: this.maps3dLib.AltitudeMode.RELATIVE_TO_MESH,
         label: markerData.showLabel ? markerData.label : null,
         title: markerData.label,
         drawsWhenOccluded: true,
       });
 
-      // Make markers interactive
-      marker.style.cursor = 'pointer';
-      marker.addEventListener('click', () => {
+      // Add hover effect for cursor (workaround since marker.style.cursor doesn't work)
+      marker.addEventListener('mouseenter', () => {
+        this.map.style.cursor = 'pointer';
+      });
+      
+      marker.addEventListener('mouseleave', () => {
+        this.map.style.cursor = 'default';
+      });
+
+      // Click event
+      marker.addEventListener('gmp-click', () => {
         // Prevent the main view from auto-framing all markers again.
         useMapStore.getState().setPreventAutoFrame(true);
         // Set a new camera target to fly to the clicked marker.
@@ -94,50 +97,39 @@ export class MapController {
   addRectangularOverlays(overlays: MapRectangularOverlay[]) {
     for (const overlayData of overlays) {
       const { center, corners, color, label } = overlayData;
-      
-      // Create corner markers for the rectangle
-      const cornerPositions = [
+
+      // Define the corners in order and close the loop
+      const path = [
+        corners.northWest,
         corners.northEast,
-        corners.northWest, 
         corners.southEast,
-        corners.southWest
+        corners.southWest,
+        corners.northWest, // Close the rectangle
       ];
-      
-      // Create markers for each corner
-      cornerPositions.forEach((corner, index) => {
-        const cornerMarker = new this.maps3dLib.Marker3DInteractiveElement({
-          position: corner,
-          altitudeMode: 'RELATIVE_TO_MESH',
-          // label: `Corner ${index + 1}`,
-          title: `Rectangle Corner ${index + 1}`,
-          drawsWhenOccluded: true,
-        });
 
-        // Style corner markers
-        cornerMarker.style.cursor = 'pointer';
-        cornerMarker.style.color = color;
-        cornerMarker.style.fontSize = '16px';
-        cornerMarker.style.fontWeight = 'bold';
-        
-        this.map.appendChild(cornerMarker);
-      });
-      
-      // Create center marker
-      const centerMarker = new this.maps3dLib.Marker3DInteractiveElement({
-        position: center,
-        altitudeMode: 'RELATIVE_TO_MESH',
-        label: label,
-        title: label,
-        drawsWhenOccluded: true,
+      // Create a 3D polyline overlay (rectangle outline)
+      const rectangleOutline = new this.maps3dLib.Polyline3DElement({
+        altitudeMode: this.maps3dLib.AltitudeMode.RELATIVE_TO_MESH,
+        drawsOccludedSegments: true,
+        strokeColor: color,
+        strokeWidth: 3,
+        geodesic: false,
       });
 
-      // Style the center marker to be more prominent
-      centerMarker.style.cursor = 'pointer';
-      centerMarker.style.color = color;
-      centerMarker.style.fontSize = '20px';
-      centerMarker.style.fontWeight = 'bold';
+      // Set the coordinates
+      rectangleOutline.coordinates = path;
+
+      // Add hover effect for cursor
+      rectangleOutline.addEventListener('mouseenter', () => {
+        this.map.style.cursor = 'pointer';
+      });
       
-      centerMarker.addEventListener('click', () => {
+      rectangleOutline.addEventListener('mouseleave', () => {
+        this.map.style.cursor = 'default';
+      });
+
+      // Click event
+      rectangleOutline.addEventListener('gmp-click', () => {
         useMapStore.getState().setPreventAutoFrame(true);
         useMapStore.getState().setCameraTarget({
           center: { ...center, altitude: 500 },
@@ -147,8 +139,68 @@ export class MapController {
           roll: 0,
         });
       });
+
+      this.map.appendChild(rectangleOutline);
+
+      // Create center marker
+      const centerMarker = new this.maps3dLib.Marker3DInteractiveElement({
+        position: center,
+        altitudeMode: this.maps3dLib.AltitudeMode.RELATIVE_TO_MESH,
+        label,
+        title: label,
+        drawsWhenOccluded: true,
+      });
+
+      // Add hover effect for cursor
+      centerMarker.addEventListener('mouseenter', () => {
+        this.map.style.cursor = 'pointer';
+      });
       
+      centerMarker.addEventListener('mouseleave', () => {
+        this.map.style.cursor = 'default';
+      });
+
+      // Click event
+      centerMarker.addEventListener('gmp-click', () => {
+        useMapStore.getState().setPreventAutoFrame(true);
+        useMapStore.getState().setCameraTarget({
+          center: { ...center, altitude: 500 },
+          range: Math.max(overlayData.width, overlayData.height) * 2,
+          tilt: 45,
+          heading: this.map.heading,
+          roll: 0,
+        });
+      });
+
       this.map.appendChild(centerMarker);
+
+      // Optional: Add corner markers if needed
+      const cornerPositions = [
+        corners.northEast,
+        corners.northWest,
+        corners.southEast,
+        corners.southWest,
+      ];
+
+      cornerPositions.forEach((corner, index) => {
+        const cornerMarker = new this.maps3dLib.Marker3DInteractiveElement({
+          position: corner,
+          altitudeMode: this.maps3dLib.AltitudeMode.RELATIVE_TO_MESH,
+          title: `Rectangle Corner ${index + 1}`,
+          drawsWhenOccluded: true,
+        });
+
+        // Add hover effect for cursor
+        cornerMarker.addEventListener('mouseenter', () => {
+          this.map.style.cursor = 'crosshair';
+        });
+        
+        cornerMarker.addEventListener('mouseleave', () => {
+          this.map.style.cursor = 'default';
+        });
+
+        this.map.appendChild(cornerMarker);
+      });
     }
   }
 

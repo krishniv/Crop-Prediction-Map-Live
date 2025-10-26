@@ -11,7 +11,7 @@
 
 import { GoogleGenAI, GenerateContentResponse } from '@google/genai';
 import { useMapStore } from '@/lib/state';
-
+import {AGRICULTURAL_AGENT_PROMPT}  from './constants.ts';
 // TODO - replace with appropriate key
 // const API_KEY = process.env.GEMINI_API_KEY
 const API_KEY = process.env.API_KEY as string;
@@ -33,15 +33,7 @@ export interface AgriculturalParameters {
   multiCrop?: string;
 }
 
-const AGRICULTURAL_SYS_INSTRUCTIONS = `You are an expert agricultural advisor AI. Based on the provided location coordinates and agricultural parameters (soil type, climate, season, rainfall, temperature, irrigation, farm size), provide detailed crop recommendations. Include:
-1. One line description of the location and its key agricultural conditions
-2. Top 3 recommended crops with rationale (if farmer is multiCrop is Yes, suggest intercropping options with percentage area allocation else show only one crop)
-3. Expected yield estimates 
-4. Soil preparation requirements (suggest if soil testing is needed)
-5. Water and fertilizer needs (Should specify if irrigation is needed)
-6. Potential challenges and mitigation strategies
-Format your response in clear sections in JSON format. It should be having one line values for easy parsing.`;
-
+const AGRICULTURAL_SYS_INSTRUCTIONS = AGRICULTURAL_AGENT_PROMPT
 /**
  * Helper function to automatically zoom the map to a specific location
  * @param latitude - The latitude coordinate
@@ -244,9 +236,7 @@ ${params.rainfall ? `Annual Rainfall: ${params.rainfall}mm` : ''}
 ${params.temperature ? `Average Temperature: ${params.temperature}°C` : ''}
 ${params.irrigationAvailable !== undefined ? `Irrigation Available: ${params.irrigationAvailable ? 'Yes' : 'No'}` : ''}
 ${params.farmSize ? `Farm Size: ${params.farmSize} hectares` : ''}
-${params.multiCrop ? `Multi Crop: ${params.multiCrop}` : ''}
-
-Please provide detailed crop recommendations for this agricultural location in strict JSON format as per the system instructions. `;
+${params.multiCrop ? `Multi Crop: ${params.multiCrop}` : ''}`;
 
 const requestBody: any = {
    contents: [
@@ -288,6 +278,7 @@ requestBody.toolConfig = {
 
 
  try {
+  
   //  console.log(`endpoint: ${endpoint}\nbody: ${JSON.stringify(requestBody, null, 2)}`)
    const response = await fetch(endpoint, {
      method: 'POST',
@@ -317,11 +308,38 @@ requestBody.toolConfig = {
    const data = await response.json();
 
    // Automatically zoom to the location after getting the response
-   zoomToLocation(params.latitude, params.longitude);
+  zoomToLocation(params.latitude, params.longitude);
   console.log('Agricultural Recommendations Response:', data); 
    return data as GenerateContentResponse;
  } catch (error) {
    console.error(`Error calling Agricultural Recommendations API: ${error}`);
    throw error;
  }
+}
+
+function isInvalidAgriculturalLocation(lat: number, lng: number): string | null {
+  // Basic range validation
+  if (lat > 90 || lat < -90 || lng > 180 || lng < -180) {
+    return "Invalid coordinates.";
+  }
+
+  // Reject extreme latitudes — not suitable for agriculture
+  if (lat > 60 || lat < -55) {
+    return "The coordinates are in extreme latitudes, likely unsuitable for agriculture.";
+  }
+
+  // Rough bounding boxes for known non-agricultural regions (oceans/deserts)
+  const oceanicZones = [
+    { minLat: -60, maxLat: 60, minLng: -180, maxLng: 180 }, // global ocean fallback
+  ];
+
+  // For example — quick rejects for mid-ocean coordinates
+  if (
+    (Math.abs(lat) < 60 && Math.abs(lng) > 120) || // mid-Pacific
+    (lat < -40 && lng > 40 && lng < 180) // Southern Ocean region
+  ) {
+    return "These coordinates fall over an ocean or non-arable region.";
+  }
+
+  return null; // valid agricultural region
 }

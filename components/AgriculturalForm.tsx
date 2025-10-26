@@ -401,6 +401,36 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
     }));
   };
 
+  const getCurrentLocation = () => {
+  if (!navigator.geolocation) {
+    alert("Geolocation is not supported by your browser.");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const { latitude, longitude } = position.coords;
+      handleInputChange('latitude', latitude);
+      handleInputChange('longitude', longitude);
+    },
+    (error) => {
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          alert("Please allow location access to use this feature.");
+          break;
+        case error.POSITION_UNAVAILABLE:
+          alert("Location information is unavailable.");
+          break;
+        case error.TIMEOUT:
+          alert("Request timed out. Try again.");
+          break;
+        default:
+          alert("Unable to fetch location.");
+      }
+    }
+  );
+};
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
@@ -503,14 +533,14 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
     <>
       <div className="agricultural-form">
         <div className="form-header">
-          <h2>🌱Farm Details Required</h2>
-          <p>Please Input your farm details below.</p>
+          <h2>Input Farm Details</h2>
+          {/* <p>Please Input your farm details below.</p> */}
         </div>
 
         <form onSubmit={handleSubmit} className="form-content">
           {/* Location Section */}
           <div className="form-section">
-            <h3>📍 Farm Location</h3>
+            <h3>Farm Location</h3>
             <div className="input-group">
               <div className="input-field">
                 <label htmlFor="latitude">Latitude *</label>
@@ -522,6 +552,8 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
                     handleInputChange('latitude', parseFloat(e.target.value) || 0)
                   }
                   placeholder="e.g., 40.7128"
+                  min="-90"
+                  max="90"
                   step="any"
                   required
                 />
@@ -536,164 +568,186 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
                     handleInputChange('longitude', parseFloat(e.target.value) || 0)
                   }
                   placeholder="e.g., -74.0060"
+                  min="-180"
+                  max="180"
                   step="any"
                   required
                 />
               </div>
             </div>
-          </div>
-
-          {/* Required Parameters */}
-          <div className="form-section">
-            <h3>🌍 Required Parameters</h3>
-            <div className="input-group">
-              <div className="input-field">
-                <label htmlFor="soilType">Soil Type *</label>
-                <select
-                  id="soilType"
-                  value={formData.soilType}
-                  onChange={(e) => handleInputChange('soilType', e.target.value)}
-                  required
-                >
-                  <option value="clay">Clay</option>
-                  <option value="sandy">Sandy</option>
-                  <option value="loamy">Loamy</option>
-                  <option value="silt">Silt</option>
-                  <option value="peat">Peat</option>
-                </select>
-              </div>
-              <div className="input-field">
-                <label htmlFor="climate">Climate Zone *</label>
-                <select
-                  id="climate"
-                  value={formData.climate}
-                  onChange={(e) => handleInputChange('climate', e.target.value)}
-                  required
-                >
-                  <option value="tropical">Tropical</option>
-                  <option value="arid">Arid</option>
-                  <option value="temperate">Temperate</option>
-                  <option value="continental">Continental</option>
-                  <option value="polar">Polar</option>
-                </select>
-              </div>
-              <div className="input-field">
-                <label htmlFor="season">Season *</label>
-                <select
-                  id="season"
-                  value={formData.season}
-                  onChange={(e) => handleInputChange('season', e.target.value)}
-                  required
-                >
-                  <option value="spring">Spring</option>
-                  <option value="summer">Summer</option>
-                  <option value="fall">Fall</option>
-                  <option value="winter">Winter</option>
-                </select>
-              </div>
-              <div className="input-field">
-                    <label htmlFor="farmSize">Farm Size (hectares)</label>
-                    <input
-                      type="number"
-                      id="farmSize"
-                      value={formData.farmSize || ''}
-                      onChange={(e) =>
-                        handleInputChange('farmSize', parseFloat(e.target.value) || undefined)
-                      }
-                      placeholder="e.g., 10"
-                      min="0"
-                      step="any"
-                    />
-                  </div>
-            </div>
-          </div>
-
-          {/* Optional Parameters */}
-          <div className="form-section">
-            <button
-              type="button"
-              className="toggle-optional"
-              onClick={() => setShowOptional(!showOptional)}
-            >
-              {showOptional ? '▼' : '▶'} Optional Parameters
-            </button>
-
-            {showOptional && (
-              <div className="optional-params">
-                <div className="input-group">
-                  <div className="input-field">
-                    <label htmlFor="rainfall">Annual Rainfall (mm)</label>
-                    <input
-                      type="number"
-                      id="rainfall"
-                      value={formData.rainfall || ''}
-                      onChange={(e) =>
-                        handleInputChange('rainfall', parseFloat(e.target.value) || undefined)
-                      }
-                      placeholder="e.g., 800"
-                      min="0"
-                    />
-                  </div>
-                  <div className="input-field">
-                    <label htmlFor="temperature">Average Temperature (°C)</label>
-                    <input
-                      type="number"
-                      id="temperature"
-                      value={formData.temperature || ''}
-                      onChange={(e) =>
-                        handleInputChange('temperature', parseFloat(e.target.value) || undefined)
-                      }
-                      placeholder="e.g., 25"
-                      step="any"
-                    />
-                  </div>
-                  {/* <div className="input-field">
-                    <label htmlFor="farmSize">Farm Size (hectares)</label>
-                    <input
-                      type="number"
-                      id="farmSize"
-                      value={formData.farmSize || ''}
-                      onChange={(e) =>
-                        handleInputChange('farmSize', parseFloat(e.target.value) || undefined)
-                      }
-                      placeholder="e.g., 10"
-                      min="0"
-                      step="any"
-                    />
-                  </div> */}
-                  <div className="input-field">
-  <label htmlFor="multiCrop">Multi Crop</label>
-  <select
-    id="multiCrop"
-    value={formData.multiCrop || ''}
-    onChange={(e) => handleInputChange('multiCrop', e.target.value)}
-    required
+            {/* ✅ Use Current Location Button */}
+  <button
+    type="button"
+    className="use-location-btn"
+    onClick={getCurrentLocation}
   >
-    <option value="">Select</option>
-    <option value="Yes">Yes</option>
-    <option value="No">No</option>
-  </select>
+    <br />
+    Use Current Location
+    <br />
+  </button>
 </div>
 
-                </div>
-                <div className="input-group">
-                  <div className="input-field checkbox-field">
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={formData.irrigationAvailable || false}
-                        onChange={(e) =>
-                          handleInputChange('irrigationAvailable', e.target.checked)
-                        }
-                      />
-                      Irrigation Available
-                    </label>
-                  </div>
-                  
-                </div>
-              </div>
-            )}
-          </div>
+          <div className="form-section">
+  <h3>Required Parameters</h3>
+  <div className="input-group">
+    {/* Soil Type */}
+    <div className="input-field">
+      <label htmlFor="soilType">Soil Type *</label>
+      <select
+        id="soilType"
+        value={formData.soilType}
+        onChange={(e) => handleInputChange('soilType', e.target.value)}
+        required
+      >
+        <option value="" disabled hidden>
+          Select soil type
+        </option>
+        <option value="clay">Clay</option>
+        <option value="sandy">Sandy</option>
+        <option value="silty">Silty</option>
+        <option value="peaty">Peaty</option>
+        <option value="chalky">Chalky</option>
+        <option value="loamy">Loamy</option>
+      </select>
+    </div>
+
+    {/* Climate Zone */}
+    <div className="input-field">
+      <label htmlFor="climate">Climate Zone *</label>
+      <select
+        id="climate"
+        value={formData.climate}
+        onChange={(e) => handleInputChange('climate', e.target.value)}
+        required
+      >
+        <option value="tropical">Tropical</option>
+        <option value="arid">Arid</option>
+        <option value="temperate">Temperate</option>
+        <option value="continental">Continental</option>
+        <option value="polar">Polar</option>
+      </select>
+    </div>
+
+    {/* Season */}
+    <div className="input-field">
+      <label htmlFor="season">Season *</label>
+      <select
+        id="season"
+        value={formData.season}
+        onChange={(e) => handleInputChange('season', e.target.value)}
+        required
+      >
+        <option value="spring">Spring</option>
+        <option value="summer">Summer</option>
+        <option value="fall">Fall</option>
+        <option value="winter">Winter</option>
+      </select>
+    </div>
+
+    {/* Farm Size */}
+    <div className="input-field">
+      <label htmlFor="farmSize">Farm Size (hectares)</label>
+      <input
+        type="number"
+        id="farmSize"
+        value={formData.farmSize || ''}
+        onChange={(e) =>
+          handleInputChange('farmSize', parseFloat(e.target.value) || undefined)
+        }
+        placeholder="e.g., 10"
+        min="0"
+        step="any"
+      />
+    </div>
+
+    {/* Annual Rainfall */}
+    <div className="input-field">
+      <label htmlFor="rainfall">Annual Rainfall (mm)</label>
+      <input
+        type="number"
+        id="rainfall"
+        value={formData.rainfall || ''}
+        onChange={(e) =>
+          handleInputChange('rainfall', parseFloat(e.target.value) || undefined)
+        }
+        placeholder="e.g., 800"
+        min="0"
+        max="12000"
+      />
+    </div>
+
+    {/* Average Temperature */}
+    <div className="input-field">
+      <label htmlFor="temperature">Average Temperature (°C)</label>
+      <input
+        type="number"
+        id="temperature"
+        value={formData.temperature || ''}
+        onChange={(e) =>
+          handleInputChange('temperature', parseFloat(e.target.value) || undefined)
+        }
+        placeholder="e.g., 25"
+        min="0"
+        max="60"
+        step="any"
+      />
+    </div>
+
+    {/* Multi Crop + Irrigation Row */}
+    <div
+      className="input-group"
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: '40px',
+      }}
+    >
+      {/* Multi Crop */}
+      <div className="input-field" style={{ flex: 1 }}>
+        <label htmlFor="multiCrop">Multi Crop</label>
+        <select
+          id="multiCrop"
+          value={formData.multiCrop || ''}
+          onChange={(e) => handleInputChange('multiCrop', e.target.value)}
+          required
+          style={{
+            width: '100%',
+            height: '40px',
+            borderRadius: '6px',
+          }}
+        >
+          {/* <option value="">Yes</option> */}
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+        </select>
+      </div>
+
+      {/* Irrigation Available */}
+      <div
+        className="input-field checkbox-field"
+        style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          marginTop: '16px',
+        }}
+      >
+        <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <input
+            type="checkbox"
+            checked={formData.irrigationAvailable || false}
+            onChange={(e) =>
+              handleInputChange('irrigationAvailable', e.target.checked)
+            }
+          />
+          Irrigation Available
+        </label>
+      </div>
+    </div>
+  </div>
+</div>
+
 
           {/* Submit Button */}
           <div className="form-actions">

@@ -30,6 +30,8 @@ import { Map3D, Map3DCameraProps} from './components/map-3d';
 import { useMapStore } from './lib/state';
 import { MapController } from './lib/map-controller';
 
+import { SoilAnalyzerButton } from './components/SoilAnalyzerButton';
+import { SoilAnalyzerPage } from './components/SoilAnalyzerPage';
 
 const ApiKeyWarning = ({ currentApiKey }: { currentApiKey: string }) => {
   const [isVisible, setIsVisible] = useState(true);
@@ -90,6 +92,7 @@ function AppComponent() {
   /** ---------------- Login state ---------------- **/
   const [showSignIn, setShowSignIn] = useState(false);
   const [farmer, setFarmer] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<'map' | 'soil-analyzer'>('map');
   
   const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -204,54 +207,55 @@ function AppComponent() {
     >
       <ErrorScreen />
       <Sidebar />
+        {currentPage === 'soil-analyzer' && (
+          <SoilAnalyzerPage 
+            onBack={() => setCurrentPage('map')} 
+          />
+        )}
 
-      {/* 🌾 AgriConnect Header with Sign In */}
-      <header className="agriconnect-header">
-        <div className="header-left">
-          <h1 className="brand-title">🌾 AgriConnect</h1>
-          <p className="brand-subtitle">Smart Crop Recommendations</p>
-        </div>
-        {/* <div className="header-right">
-          <button className="news-button" onClick={() => window.open('https://news.google.com/search?q=agriculture+farming+news&hl=en-US', '_blank')}> 🗞️ Farm-o-Buzz </button>
-          <button className="signin-button" onClick={() => setShowSignIn(true)}> 👨‍🌾 Sign In / Sign Up </button>
-        </div> */}
-      {/* </header> */}
-      
-      <div className="header-right">
-  <button
-    className="news-button"
-    onClick={() =>
-      window.open(
-        'https://news.google.com/search?q=agriculture+farming+news&hl=en-US',
-        '_blank'
-      )
-    }
-  >
-    🗞️ Farm-o-Buzz
-  </button>
+      {currentPage === 'map' && (
+        <>
+          {/* 🌾 AgriConnect Header with Sign In */}
+          <header className="agriconnect-header">
+            <div className="header-left">
+              <h1 className="brand-title">🌾 AgriConnect</h1>
+              <p className="brand-subtitle">Smart Crop Recommendations</p>
+            </div>
+            
+            <div className="header-right">
+              <button
+                className="news-button"
+                onClick={() => window.open('/news.html', '_blank')}
+                >
+                🗞️ Farm-o-Buzz
+              </button>
 
-  {farmer ? (
-    <div className="farmer-info">
-      <span className="farmer-icon">👨‍🌾</span>
-      <span className="farmer-name">
-        Welcome,&nbsp;
-        {farmer.charAt(0).toUpperCase() + farmer.slice(1)}
-      </span>
-      <button className="signout-btn" onClick={handleLogout}>
-        Log Out
-      </button>
-    </div>
-  ) : (
-    <button
-      type="button"
-      className="signin-button"
-      onClick={() => setShowSignIn(true)}
-    >
-      👨‍🌾 Sign In / Sign Up
-    </button>
-  )}
-</div>
-      </header>
+              <SoilAnalyzerButton onClick={() => setCurrentPage('soil-analyzer')} />
+
+              {farmer ? (
+                <div className="farmer-info">
+                  <span className="farmer-icon">👨‍🌾</span>
+                  <span className="farmer-name">
+                    Welcome,&nbsp;
+                    {farmer.charAt(0).toUpperCase() + farmer.slice(1)}
+                  </span>
+                  <button className="signout-btn" onClick={handleLogout}>
+                    Log Out
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="signin-button"
+                  onClick={() => setShowSignIn(true)}
+                >
+                  👨‍🌾 Sign In / Sign Up
+                </button>
+              )}
+            </div>
+          </header>
+        </>
+      )}
 
       {/* 🔐 Modal */}
       {showSignIn && (
@@ -279,8 +283,6 @@ function AppComponent() {
       {/* ✅ FULL-WIDTH INTRO MOVED ABOVE THE SPLIT LAYOUT */}
       <section className="agriconnect-hero">
         <div className="agriconnect-hero-content">
-          {/* <h1 className="agriconnect-title">AgriConnect</h1>
-          <p className="agriconnect-subtitle">Smart Crop Recommendations</p> */}
 
           <div className="agriconnect-description">
             <h2>About AgriConnect Platform</h2>
@@ -288,9 +290,7 @@ function AppComponent() {
               AgriConnect uses advanced AI algorithms and environmental data to provide personalized crop
               recommendations for your farm. Our system analyzes your location, soil type, climate
               conditions, and seasonal patterns to suggest the most suitable crops for optimal yield.
-              <br /><br />
-              Sign in to get started and unlock data-driven insights that will help you make smarter
-              farming decisions.
+              
             </p>
           </div>
 
@@ -316,20 +316,24 @@ function AppComponent() {
 
       {/* ✅ ORIGINAL SPLIT LAYOUT BELOW */}
       <div className="app-layout">
-        <div className="form-panel">
-          <AgriculturalForm />
-          {/* <div className="control-panel" ref={consolePanelRef}>
-            <ControlTray trayRef={controlTrayRef} />
-          </div> */}
-        </div>
+        {currentPage === 'map' && (
+          <div className="form-panel">
+            <AgriculturalForm />
+            {/* <div className="control-panel" ref={consolePanelRef}>
+              <ControlTray trayRef={controlTrayRef} />
+            </div> */}
+          </div>
+        )}
 
-        <div className="map-panel">
-          <Map3D
-            ref={element => setMap(element ?? null)}
-            onCameraChange={handleCameraChange}
-            {...viewProps}
-          />
-        </div>
+        {currentPage === 'map' && (
+          <div className="map-panel">
+            <Map3D
+              ref={element => setMap(element ?? null)}
+              onCameraChange={handleCameraChange}
+              {...viewProps}
+            />
+          </div>
+        )}
       </div>
     </LiveAPIProvider>
   );
