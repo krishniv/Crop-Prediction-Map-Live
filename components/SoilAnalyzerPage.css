@@ -52,16 +52,27 @@
   gap: 1rem;
 }
 
-.soil-analyzer-container {
+/* .soil-analyzer-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
   min-height: 100vh;
+} */
+.soil-analysis-container {
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 0;
+  background: linear-gradient(180deg, #f5fbf5 0%, #eaf5ec 100%);
 }
+
 
 .soil-analyzer-header {
   text-align: center;
-  margin-bottom: 3rem;
+  margin-top: 3rem;
+  margin-bottom: 2rem;
   position: relative;
 }
 
@@ -102,11 +113,18 @@
   font-weight: 400;
 }
 
-.soil-analyzer-content {
+/* .soil-analyzer-content {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 3rem;
   align-items: start;
+} */
+.soil-analyzer-content {
+  display: flex;
+  flex-direction: column;    /* 👈 stack vertically */
+  justify-content: center;
+  align-items: center;
+  gap: 3rem;
 }
 
 .upload-section {
@@ -245,12 +263,16 @@
   font-size: 1.2rem;
 }
 
+
 .results-section {
-  background: white;
-  padding: 2.5rem;
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e8f5e8;
+  background: transparent;
+  box-shadow: none;
+  border: none;
+  padding: 0;
+  width: 100%;                   /* take full available width */
+  max-width: 90%;               /* remove previous centering */
+  margin: 3rem 0 2rem 0;;            /* top margin only */
+  text-align: left;
 }
 
 .results-title {
@@ -281,42 +303,40 @@
   margin-bottom: 0;
 }
 
+
+/* Section titles within analysis (like “Nutrients Analysis”) */
 .section-title {
-  margin: 0 0 12px 0;
+  margin: 2rem 0 0.8rem 0;      /* tighter top margin */
   color: #2d5a27;
   font-size: 1.3rem;
   font-weight: 600;
-  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-  border-bottom: 2px solid #e8f5e8;
-  padding-bottom: 8px;
-  letter-spacing: 0.3px;
+  border-bottom: 1px solid rgba(45, 90, 39, 0.15);
+  padding-bottom: 6px;
 }
 
+
+/* Bullet points – less space between */
 .analysis-bullet {
   display: flex;
   align-items: flex-start;
-  margin: 8px 0;
-  padding-left: 0;
-  gap: 12px;
+  margin: 4px 0;                /* was 8px → reduced */
+  gap: 10px;                    /* smaller horizontal gap */
 }
+
 
 .bullet-point {
   color: #4a7c59;
   font-weight: 600;
-  font-size: 16px;
-  line-height: 1.6;
-  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-  flex-shrink: 0;
+  font-size: 15px;
   margin-top: 2px;
 }
+
 
 .bullet-text {
   flex: 1;
   color: #2c3e50;
-  line-height: 1.6;
-  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-  font-weight: 400;
-  font-size: 16px;
+  font-size: 15px;
+  line-height: 1.5;             /* slightly compacted text spacing */
 }
 
 .analysis-numbered {
@@ -437,4 +457,23 @@
   .analysis-paragraph p {
     font-size: 14px;
   }
+}
+
+.upload-section {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e8f5e8;
+  width: 700px;           /* fixed width for large screens */
+  max-width: 90%;         /* responsive on small screens */
+  margin: 0 auto;         /* center horizontally */
+}
+
+.formatted-result {
+  color: #2c3e50;
+  font-size: 1rem;
+  line-height: 1.5;             /* reduced from 1.7 */
+  width: 90%;                   /* allow some breathing room */
+  margin: 0 auto;               /* center text inside full width */
 }

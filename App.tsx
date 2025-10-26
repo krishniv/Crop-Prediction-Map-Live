@@ -225,13 +225,8 @@ function AppComponent() {
             <div className="header-right">
               <button
                 className="news-button"
-                onClick={() =>
-                  window.open(
-                    'https://news.google.com/search?q=agriculture+farming+news&hl=en-US',
-                    '_blank'
-                  )
-                }
-              >
+                onClick={() => window.open('/news.html', '_blank')}
+                >
                 🗞️ Farm-o-Buzz
               </button>
 
@@ -288,8 +283,6 @@ function AppComponent() {
       {/* ✅ FULL-WIDTH INTRO MOVED ABOVE THE SPLIT LAYOUT */}
       <section className="agriconnect-hero">
         <div className="agriconnect-hero-content">
-          {/* <h1 className="agriconnect-title">AgriConnect</h1>
-          <p className="agriconnect-subtitle">Smart Crop Recommendations</p> */}
 
           <div className="agriconnect-description">
             <h2>About AgriConnect Platform</h2>
@@ -297,9 +290,7 @@ function AppComponent() {
               AgriConnect uses advanced AI algorithms and environmental data to provide personalized crop
               recommendations for your farm. Our system analyzes your location, soil type, climate
               conditions, and seasonal patterns to suggest the most suitable crops for optimal yield.
-              <br /><br />
-              {/* Sign in to get started and unlock data-driven insights that will help you make smarter
-              farming decisions. */}
+              
             </p>
           </div>
 

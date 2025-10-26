@@ -100,6 +100,19 @@ Please be specific and actionable in your recommendations.`
 
   const formatAnalysisResult = (result: string) => {
     const lines = result.split('\n').filter(line => line.trim() !== '');
+  
+  const formatText = (text: string) => {
+  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith("*") && part.endsWith("*")) {
+      return <em key={i}>{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+};
     
     return (
       <div className="analysis-sections">
@@ -126,7 +139,7 @@ Please be specific and actionable in your recommendations.`
             return (
               <div key={index} className="analysis-bullet">
                 <span className="bullet-point">•</span>
-                <span className="bullet-text">{trimmedLine.substring(1).trim()}</span>
+                <span className="bullet-text">{formatText(trimmedLine.substring(1).trim())}</span>
               </div>
             );
           }
@@ -152,7 +165,7 @@ Please be specific and actionable in your recommendations.`
           if (trimmedLine.length > 0) {
             return (
               <div key={index} className="analysis-paragraph">
-                <p>{trimmedLine}</p>
+                <p>{formatText(trimmedLine)}</p>
               </div>
             );
           }
