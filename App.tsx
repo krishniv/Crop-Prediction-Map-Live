@@ -220,13 +220,8 @@ function AppComponent() {
       <div className="header-right">
   <button
     className="news-button"
-    onClick={() =>
-      window.open(
-        'https://news.google.com/search?q=agriculture+farming+news&hl=en-US',
-        '_blank'
-      )
-    }
-  >
+    onClick={() => window.open('/news.html', '_blank')}
+>
     🗞️ Farm-o-Buzz
   </button>
 
