@@ -503,8 +503,8 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
     <>
       <div className="agricultural-form">
         <div className="form-header">
-          <h2>🌱 Agricultural Crop Recommendations</h2>
-          <p>Get AI-powered crop recommendations based on your farm location and conditions.</p>
+          <h2>🌱Farm Details Required</h2>
+          <p>Please Input your farm details below.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="form-content">
@@ -591,6 +591,20 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
                   <option value="winter">Winter</option>
                 </select>
               </div>
+              <div className="input-field">
+                    <label htmlFor="farmSize">Farm Size (hectares)</label>
+                    <input
+                      type="number"
+                      id="farmSize"
+                      value={formData.farmSize || ''}
+                      onChange={(e) =>
+                        handleInputChange('farmSize', parseFloat(e.target.value) || undefined)
+                      }
+                      placeholder="e.g., 10"
+                      min="0"
+                      step="any"
+                    />
+                  </div>
             </div>
           </div>
 
@@ -633,7 +647,7 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
                       step="any"
                     />
                   </div>
-                  <div className="input-field">
+                  {/* <div className="input-field">
                     <label htmlFor="farmSize">Farm Size (hectares)</label>
                     <input
                       type="number"
@@ -646,19 +660,21 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
                       min="0"
                       step="any"
                     />
-                  </div>
+                  </div> */}
                   <div className="input-field">
-                    <label htmlFor="multiCrop">Multi Crop</label>
-                    <input
-                      type="text"
-                      id="multiCrop"
-                      value={formData.multiCrop || ''}
-                      onChange={(e) =>
-                        handleInputChange('multiCrop', e.target.value || undefined)
-                      }
-                      placeholder="Yes/No"
-                    />
-                  </div>
+  <label htmlFor="multiCrop">Multi Crop</label>
+  <select
+    id="multiCrop"
+    value={formData.multiCrop || ''}
+    onChange={(e) => handleInputChange('multiCrop', e.target.value)}
+    required
+  >
+    <option value="">Select</option>
+    <option value="Yes">Yes</option>
+    <option value="No">No</option>
+  </select>
+</div>
+
                 </div>
                 <div className="input-group">
                   <div className="input-field checkbox-field">
