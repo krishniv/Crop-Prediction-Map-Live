@@ -2069,3 +2069,73 @@ gmp-place-details-compact {
   transform: translateY(1px);
   box-shadow: 0 2px 8px rgba(74, 124, 89, 0.25);
 }
+
+/* 🌾 Main Header (reuse from your other pages) */
+.agriconnect-header {
+  background: linear-gradient(135deg, #2d5a27 0%, #1e3d1a 100%);
+  color: white;
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.brand-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0;
+  color: #ffffff;
+}
+
+.brand-subtitle {
+  font-size: 0.95rem;
+  margin: 0;
+  color: #b8d4c1;
+  font-weight: 400;
+}
+
+/* 📰 News Hero Section */
+.agriconnect-news-hero {
+  background: linear-gradient(180deg, #0b1b13 0%, #10261d 100%);
+  color: #e0f6e8;
+  text-align: center;
+  padding: 100px 20px 70px 20px;
+  border-bottom: 1px solid #67f09c;
+  box-shadow: 0 8px 30px rgba(103, 240, 156, 0.15);
+}
+
+.agriconnect-news-hero-content {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.agriconnect-news-hero h1 {
+  color: #67f09c;
+  font-size: 3rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  text-shadow: 0 0 8px rgba(103, 240, 156, 0.3);
+}
+
+.agriconnect-news-hero p {
+  color: #b8d4c1;
+  font-size: 1.2rem;
+  font-weight: 500;
+  margin-bottom: 25px;
+}
+
+.agriconnect-news-hero::after {
+  content: "";
+  display: block;
+  width: 90%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #67f09c, transparent);
+  margin: 0 auto;
+  opacity: 0.7;
+}
+
