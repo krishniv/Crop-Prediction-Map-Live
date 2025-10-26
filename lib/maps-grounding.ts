@@ -246,7 +246,7 @@ ${params.irrigationAvailable !== undefined ? `Irrigation Available: ${params.irr
 ${params.farmSize ? `Farm Size: ${params.farmSize} hectares` : ''}
 ${params.multiCrop ? `Multi Crop: ${params.multiCrop}` : ''}
 
-Please provide detailed crop recommendations for this agricultural location in strict JSON format as per the system instructions. `;
+Please provide detailed crop recommendations for this agricultural location in strict JSON format as per the system instructions. IF THE LOCATION IS NOT SUITABLE FOR AGRICULTURE, STATE REASON CLEARLY IN THE RESPONSE. CITY AREA, OCEAN, DESERT, MOUNTAINOUS AREAS ARE NOT SUITABLE FOR AGRICULTURE.`;
 
 const requestBody: any = {
    contents: [
