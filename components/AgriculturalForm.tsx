@@ -33,6 +33,7 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
   const [showOptional, setShowOptional] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [response, setResponse] = useState<string | null>(null);
+  const [showReport, setShowReport] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (field: keyof AgriculturalParameters, value: any) => {
@@ -91,9 +92,10 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
       return;
     }
 
-    setIsSubmitting(true);
+  setIsSubmitting(true);
     setError(null);
-    setResponse(null);
+  setResponse(null);
+  setShowReport(false);
 
     try {
       // Clear any existing rectangular overlays
@@ -165,6 +167,7 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
             mapContainer={mapContainer}
             response={response}
             overlayClassName="map-overlay-recommendations"
+            onGenerateReport={() => setShowReport(true)}
           />,
           mapContainer
         )
@@ -394,6 +397,9 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
 
        </div>
       {overlayPortal}
+      {showReport && response && (
+        <DetailedReport text={response} />
+      )}
     </>
   );
 }
@@ -403,10 +409,12 @@ function DraggableResizableOverlay({
   mapContainer,
   response,
   overlayClassName,
+  onGenerateReport,
 }: {
   mapContainer: HTMLElement;
   response: string;
   overlayClassName?: string;
+  onGenerateReport?: () => void;
 }) {
   const overlayRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -489,162 +497,268 @@ function DraggableResizableOverlay({
         </div>
 
         <div className="recommendation-content" style={{ overflow: 'auto', flex: '1 1 auto' }} onPointerUp={onResizeEnd}>
-          <FormattedJsonOrMarkdown text={response} />
+          <OverlaySummary text={response} />
+        </div>
+        <div style={{ flex: '0 0 auto', paddingTop: 8 }}>
+          <button className="submit-button" onClick={() => onGenerateReport && onGenerateReport()}>
+            Generate Report
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
+// Extract JSON and render a compact summary for the overlay
+function OverlaySummary({ text }: { text: string }) {
+  const parsed = parseAssistantJson(text);
+  if (!parsed) return <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>;
+  
+  // Check if location is suitable for agriculture
+  if (parsed.is_suitable_for_agriculture === false) {
+    return (
+      <div style={{ color: '#d32f2f', padding: 8, background: '#ffebee', borderRadius: 6 }}>
+        <strong>⚠️ Location Not Suitable for Agriculture</strong>
+        <div style={{ marginTop: 8, fontSize: '0.95rem' }}>
+          {parsed.unsuitability_reason || 'This location is not suitable for farming.'}
+        </div>
+      </div>
+    );
+  }
+  
+  const loc = parsed.location_description || parsed.location || parsed.locationOverview;
+  const crops = parsed.recommended_crops || parsed.top_crops || parsed.recommendedCrops || parsed.cropRecommendations;
+  const cropLine = Array.isArray(crops)
+    ? crops.map((c: any) => c?.crop_name || c?.name || c?.crop || c?.cropName).filter(Boolean).join(', ')
+    : typeof crops === 'string'
+      ? crops
+      : '';
+  return (
+    <div>
+      {loc && <div><strong>Location:</strong> {loc}</div>}
+      {cropLine && <div><strong>Recommended Crops:</strong> {cropLine}</div>}
+      {!loc && !cropLine && <div>No structured summary available.</div>}
+    </div>
+  );
+}
+
 function FormattedJsonOrMarkdown({ text }: { text: string }) {
-  // Try multiple heuristics to recover JSON from the assistant response.
-  const tryParse = (candidate: string) => {
+  const parsed = parseAssistantJson(text);
+  if (parsed) return <PrettyJson data={parsed} />;
+  return <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>;
+}
+
+// Robust JSON extraction from assistant responses
+function parseAssistantJson(text: string): any | null {
+  if (!text || typeof text !== 'string') return null;
+
+  const safeParse = (s: string): any | null => {
     try {
-      return JSON.parse(candidate);
-    } catch (e) {
-      return null;
+      return JSON.parse(s);
+    } catch {
+      try {
+        const cleaned = s.replace(/,\s*([}\]])/g, '$1');
+        return JSON.parse(cleaned);
+      } catch {
+        return null;
+      }
     }
   };
 
   // 1) direct parse
-  let parsed = tryParse(text);
-  if (!parsed) {
-    // 2) strip code fences ```json ... ``` or ``` ... ```
-    const fenceMatch = text.match(/```(?:json\n)?([\s\S]*?)```/i);
-    if (fenceMatch && fenceMatch[1]) {
-      parsed = tryParse(fenceMatch[1].trim());
-    }
+  let parsed = safeParse(text);
+  if (parsed) return parsed;
+
+  // 2) fenced code blocks
+  const fenceRegex = /```(?:json\s*\n)?([\s\S]*?)```/gi;
+  let m: RegExpExecArray | null;
+  while ((m = fenceRegex.exec(text)) !== null) {
+    const candidate = m[1].trim();
+    parsed = safeParse(candidate);
+    if (parsed) return parsed;
   }
 
-  if (!parsed) {
-    // 3) extract first {...} block
-    const firstOpen = text.indexOf('{');
-    const lastClose = text.lastIndexOf('}');
-    if (firstOpen !== -1 && lastClose !== -1 && lastClose > firstOpen) {
-      const sub = text.slice(firstOpen, lastClose + 1);
-      parsed = tryParse(sub);
-    }
-  }
-
-  if (!parsed) {
-    // 4) Sometimes the assistant returns a JSON string (escaped) inside quotes
-    const trimmed = text.trim();
-    if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
-      try {
-        const unquoted = JSON.parse(trimmed);
-        parsed = tryParse(unquoted);
-      } catch (e) {
-        // ignore
+  // 3) balanced braces/brackets
+  const findBalanced = (open: string, close: string) => {
+    const out: string[] = [];
+    for (let i = 0; i < text.length; i++) {
+      if (text[i] !== open) continue;
+      let depth = 0;
+      for (let j = i; j < text.length; j++) {
+        if (text[j] === open) depth++;
+        else if (text[j] === close) depth--;
+        if (depth === 0) { out.push(text.slice(i, j + 1)); break; }
       }
     }
-  }
+    return out;
+  };
+  for (const c of findBalanced('{', '}')) { const v = safeParse(c); if (v) return v; }
+  for (const c of findBalanced('[', ']')) { const v = safeParse(c); if (v) return v; }
 
-  if (parsed) {
-    return <PrettyJson data={parsed} />;
+  // 4) quoted JSON substrings
+  const q = /(["'])(\{[\s\S]*\}|\[[\s\S]*\])\1/gm;
+  while ((m = q.exec(text)) !== null) {
+    const inner = m[2];
+    parsed = safeParse(inner);
+    if (parsed) return parsed;
   }
-
-  // fallback: render markdown/raw text
-  return <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>;
+  return null;
 }
 
 function PrettyJson({ data }: { data: any }) {
-  // Render top-level sections with nicer layout
+  // Render top-level sections with tolerant field names
+  const loc = data.location_description || data.location || data.locationOverview;
+  const recommended = data.recommended_crops || data.top_crops || data.recommendedCrops || data.cropRecommendations;
+  const yields = data.expected_yield_estimates || data.yield_estimates || data.expectedYields;
+  const soil = data.soil_preparation_requirements || data.soilPreparation;
+  const water = data.water_and_fertilizer_needs || data.waterAndFertilizer;
+  const challenges = data.potential_challenges_and_mitigation_strategies || data.challenges;
+
   return (
     <div className="json-root">
-      {data.location_description && (
+      {loc && (
         <section className="json-section">
           <h4>Location Overview</h4>
-          <p className="json-value">{data.location_description}</p>
+          <p className="json-value">{loc}</p>
         </section>
       )}
 
-      {Array.isArray(data.recommended_crops) && (
+      {Array.isArray(recommended) && (
         <section className="json-section">
           <h4>Recommended Crops</h4>
           <div className="crop-list">
-            {data.recommended_crops.map((c: any, idx: number) => (
-              <article key={idx} className="crop-card">
-                <div className="crop-card-header">
-                  <strong className="crop-name">{c.crop_name}</strong>
-                  {c.percentage_area_allocation && (
-                    <span className="crop-alloc">{c.percentage_area_allocation}</span>
-                  )}
-                </div>
-                {c.rationale && <p className="crop-rationale">{c.rationale}</p>}
-                <div className="kv-grid">
-                  {c.intercropping_options && (
-                    <div className="kv-row">
-                      <div className="kv-key">Intercropping</div>
-                      <div className="kv-val">{c.intercropping_options}</div>
-                    </div>
-                  )}
-                </div>
-              </article>
-            ))}
+            {recommended.map((c: any, idx: number) => {
+              const name = c.crop_name || c.name || c.crop || c.cropName || `Crop ${idx + 1}`;
+              const allocation = c.percentage_area_allocation || c.area_allocation;
+              return (
+                <article key={idx} className="crop-card">
+                  <div className="crop-card-header">
+                    <strong className="crop-name">{name}</strong>
+                    {allocation && (
+                      <span className="crop-alloc">{allocation}</span>
+                    )}
+                  </div>
+                  {c.rationale && <p className="crop-rationale">{c.rationale}</p>}
+                  <div className="kv-grid">
+                    {(c.intercropping_options || c.intercropping) && (
+                      <div className="kv-row">
+                        <div className="kv-key">Intercropping</div>
+                        <div className="kv-val">{c.intercropping_options || c.intercropping}</div>
+                      </div>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </section>
       )}
 
-      {data.expected_yield_estimates && (
+      {yields && (
         <section className="json-section">
           <h4>Expected Yield Estimates</h4>
-          <ul className="kv-list">
-            {Object.entries(data.expected_yield_estimates).map(([k, v]) => (
-              <li key={k}>
-                <span className="kv-key">{k.replace(/_/g, ' ')}:</span>{' '}
-                <span className="kv-val">{String(v)}</span>
-              </li>
-            ))}
-          </ul>
+          {typeof yields === 'string' ? (
+            <p className="json-value">{yields}</p>
+          ) : Array.isArray(yields) ? (
+            <ul className="kv-list">
+              {yields.map((item: any, idx: number) => (
+                <li key={idx}>
+                  <span className="kv-val">{String(item)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <ul className="kv-list">
+              {Object.entries(yields).map(([k, v]) => (
+                <li key={k}>
+                  <span className="kv-key">{k.replace(/_/g, ' ')}:</span>{' '}
+                  <span className="kv-val">{String(v)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       )}
 
-      {data.soil_preparation_requirements && (
+      {soil && (
         <section className="json-section">
           <h4>Soil Preparation</h4>
-          <div className="kv-list">
-            {Object.entries(data.soil_preparation_requirements).map(([k, v]) => (
-              <div key={k} className="kv-row">
-                <div className="kv-key">{k.replace(/_/g, ' ')}:</div>
-                <div className="kv-val">{String(v)}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {data.water_and_fertilizer_needs && (
-        <section className="json-section">
-          <h4>Water & Fertilizer</h4>
-          <div className="kv-list">
-            {Object.entries(data.water_and_fertilizer_needs).map(([k, v]) => (
-              <div key={k} className="kv-row">
-                <div className="kv-key">{k.replace(/_/g, ' ')}:</div>
-                <div className="kv-val">
-                  {typeof v === 'object' ? (
-                    <div className="sub-kv">
-                      {Object.entries(v).map(([kk, vv]) => (
-                        <div key={kk} className="kv-row">
-                          <div className="kv-key small">{kk}:</div>
-                          <div className="kv-val small">{String(vv)}</div>
+          {typeof soil === 'string' ? (
+            <p className="json-value">{soil}</p>
+          ) : Array.isArray(soil) ? (
+            <ul className="kv-list">
+              {soil.map((item: any, idx: number) => (
+                <li key={idx}>
+                  {typeof item === 'object' ? (
+                    <>
+                      {Object.entries(item).map(([k, v]) => (
+                        <div key={k} className="kv-row">
+                          <div className="kv-key">{k.replace(/_/g, ' ')}:</div>
+                          <div className="kv-val">{String(v)}</div>
                         </div>
                       ))}
-                    </div>
+                    </>
                   ) : (
-                    String(v)
+                    <span className="kv-val">{String(item)}</span>
                   )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="kv-list">
+              {Object.entries(soil).map(([k, v]) => (
+                <div key={k} className="kv-row">
+                  <div className="kv-key">{k.replace(/_/g, ' ')}:</div>
+                  <div className="kv-val">{String(v)}</div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
       )}
 
-      {Array.isArray(data.potential_challenges_and_mitigation_strategies) && (
+      {water && (
+        <section className="json-section">
+          <h4>Water & Fertilizer</h4>
+          {typeof water === 'string' ? (
+            <p className="json-value">{water}</p>
+          ) : Array.isArray(water) ? (
+            <ul className="kv-list">
+              {water.map((item: any, idx: number) => (
+                <li key={idx}><span className="kv-val">{String(item)}</span></li>
+              ))}
+            </ul>
+          ) : (
+            <div className="kv-list">
+              {Object.entries(water).map(([k, v]) => (
+                <div key={k} className="kv-row">
+                  <div className="kv-key">{k.replace(/_/g, ' ')}:</div>
+                  <div className="kv-val">
+                    {v && typeof v === 'object' && !Array.isArray(v) ? (
+                      <div className="sub-kv">
+                        {Object.entries(v).map(([kk, vv]) => (
+                          <div key={kk} className="kv-row">
+                            <div className="kv-key small">{kk}:</div>
+                            <div className="kv-val small">{String(vv)}</div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      String(v)
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {Array.isArray(challenges) && (
         <section className="json-section">
           <h4>Potential Challenges & Mitigation</h4>
           <ol className="challenge-list">
-            {data.potential_challenges_and_mitigation_strategies.map((c: any, i: number) => (
+            {challenges.map((c: any, i: number) => (
               <li key={i}>
                 <strong>{c.challenge}</strong>
                 <div className="kv-val">{c.mitigation}</div>
@@ -653,6 +767,44 @@ function PrettyJson({ data }: { data: any }) {
           </ol>
         </section>
       )}
+    </div>
+  );
+}
+
+// Detailed report container rendered below the split layout (left panel)
+function DetailedReport({ text }: { text: string }) {
+  const parsed = parseAssistantJson(text);
+  if (!parsed) {
+    return (
+      <div style={{ background: '#fff', color: '#222', padding: 24, borderRadius: 12, margin: '24px 0', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+        <h2 style={{ marginTop: 0 }}>Full Crop Recommendation Report</h2>
+        <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{text}</pre>
+      </div>
+    );
+  }
+  
+  // Check if location is unsuitable
+  if (parsed.is_suitable_for_agriculture === false) {
+    return (
+      <div style={{ background: '#fff', color: '#222', padding: 24, borderRadius: 12, margin: '24px 0', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+        <h2 style={{ marginTop: 0, color: '#d32f2f' }}>⚠️ Location Assessment</h2>
+        <div style={{ padding: 16, background: '#ffebee', borderRadius: 8, border: '2px solid #ef5350' }}>
+          <h3 style={{ marginTop: 0, color: '#c62828' }}>Location Not Suitable for Agriculture</h3>
+          <p style={{ fontSize: '1.1rem', lineHeight: 1.6 }}>
+            {parsed.unsuitability_reason || 'This location is not suitable for farming. It may be an ocean, urban area, desert, or other non-agricultural terrain.'}
+          </p>
+          <p style={{ marginTop: 16, fontSize: '0.95rem', color: '#666' }}>
+            <strong>Suggestion:</strong> Please check your coordinates and try a different location that has farmland or agricultural areas.
+          </p>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div style={{ background: '#fff', color: '#222', padding: 24, borderRadius: 12, margin: '24px 0', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+      <h2 style={{ marginTop: 0 }}>Full Crop Recommendation Report</h2>
+      <PrettyJson data={parsed} />
     </div>
   );
 }

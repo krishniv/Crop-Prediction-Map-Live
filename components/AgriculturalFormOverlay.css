@@ -46,11 +46,12 @@
 .json-section h4 {
   margin: 0 0 6px 0;
   font-size: 1rem;
-  color: #0b3b2e;
+  color: #1a1a1a;
+  font-weight: 600;
 }
 .json-section .json-value {
   margin: 0;
-  color: #111;
+  color: #2d2d2d;
 }
 .crop-list {
   display: flex;
@@ -70,18 +71,18 @@
   gap: 8px;
   margin-bottom: 6px;
 }
-.crop-name { font-size: 1rem; color: #062e1f; }
-.crop-alloc { font-size: 0.85rem; color: #065f46; background: rgba(6,95,70,0.08); padding: 2px 6px; border-radius: 6px; }
-.crop-rationale { margin: 0 0 8px 0; color: #111; }
+.crop-name { font-size: 1rem; color: #1a1a1a; font-weight: 600; }
+.crop-alloc { font-size: 0.85rem; color: #fff; background: #047857; padding: 2px 6px; border-radius: 6px; font-weight: 500; }
+.crop-rationale { margin: 0 0 8px 0; color: #2d2d2d; }
 .kv-list { padding-left: 16px; margin: 6px 0; }
-.kv-list li { margin-bottom: 6px; }
-.kv-key { font-weight: 600; color: #0b3b2e; }
-.kv-val { color: #111; }
+.kv-list li { margin-bottom: 6px; color: #2d2d2d; }
+.kv-key { font-weight: 600; color: #1a1a1a; }
+.kv-val { color: #2d2d2d; }
 .kv-row { display: flex; gap: 8px; margin-bottom: 6px; }
-.kv-key.small { min-width: 120px; font-weight: 600; }
-.kv-val.small { color: #222; }
+.kv-key.small { min-width: 120px; font-weight: 600; color: #1a1a1a; }
+.kv-val.small { color: #2d2d2d; }
 .challenge-list { padding-left: 18px; }
-.challenge-list li { margin-bottom: 8px; }
+.challenge-list li { margin-bottom: 8px; color: #2d2d2d; }
 
 .map-overlay-recommendations .overlay-header {
   cursor: move;

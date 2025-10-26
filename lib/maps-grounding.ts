@@ -32,15 +32,52 @@ export interface AgriculturalParameters {
   farmSize?: number; // Farm size in hectares
   multiCrop?: string;
 }
+// import { AGRICULTURAL_AGENT_PROMPT } from './constants';
+// const AGRICULTURAL_SYS_INSTRUCTIONS = AGRICULTURAL_AGENT_PROMPT
+const AGRICULTURAL_SYS_INSTRUCTIONS = `You are an expert agricultural advisor AI. Based on the provided location coordinates and agricultural parameters (soil type, climate, season, rainfall, temperature, irrigation, farm size), provide detailed crop recommendations.
 
-const AGRICULTURAL_SYS_INSTRUCTIONS = `You are an expert agricultural advisor AI. Based on the provided location coordinates and agricultural parameters (soil type, climate, season, rainfall, temperature, irrigation, farm size), provide detailed crop recommendations. Include:
-1. One line description of the location and its key agricultural conditions
-2. Top 3 recommended crops with rationale (if farmer is multiCrop is Yes, suggest intercropping options with percentage area allocation else show only one crop)
-3. Expected yield estimates 
-4. Soil preparation requirements (suggest if soil testing is needed)
-5. Water and fertilizer needs (Should specify if irrigation is needed)
-6. Potential challenges and mitigation strategies
-Format your response in clear sections in JSON format. It should be having one line values for easy parsing.`;
+CRITICAL: You MUST respond with ONLY valid JSON. Do NOT include any markdown code fences, explanatory text, or any content outside the JSON object.
+
+LOCATION VALIDATION: First check if the location is suitable for agriculture. If the location is ocean, city/urban area, or having tall buildings or desert (without irrigation), mountainous terrain, or otherwise unsuitable for farming, set "is_suitable_for_agriculture" to false and provide a clear reason in "unsuitability_reason".
+
+Your response must be a single JSON object with exactly these fields:
+{
+  "is_suitable_for_agriculture": boolean,
+  "unsuitability_reason": "string - only if is_suitable_for_agriculture is false, explain why (e.g., 'Location is in ocean', 'Urban area', 'Desert without irrigation')",
+  "location_description": "string - one line description of the location and its key agricultural conditions",
+  "recommended_crops": [
+    {
+      "crop_name": "string",
+      "rationale": "string - why this crop is suitable",
+      "intercropping_options": "string - if multiCrop is Yes, suggest intercropping options",
+      "area_allocation": "string - percentage if multiCrop is Yes"
+    }
+  ],
+  "expected_yield_estimates": {
+    "crop_name": "string - yield estimate"
+  },
+  "soil_preparation_requirements": {
+    "soil_testing_needed": "string - Yes/No with brief explanation",
+    "general_preparation": "string - preparation steps"
+  },
+  "water_and_fertilizer_needs": {
+    "irrigation_needed": "string - Yes/No with brief explanation",
+    "fertilizer_needs": "string - fertilizer recommendations"
+  },
+  "potential_challenges_and_mitigation_strategies": [
+    {
+      "challenge": "string",
+      "mitigation": "string"
+    }
+  ]
+}
+
+Rules:
+- If multiCrop is "Yes", provide 3 recommended crops with intercropping options and area allocation percentages
+- If multiCrop is "No" or not specified, provide only 1 recommended crop
+- Keep all values concise and single-line
+- Return ONLY the JSON object, nothing else
+- Do NOT wrap the JSON in markdown code fences or backticks`;
 
 /**
  * Helper function to automatically zoom the map to a specific location
@@ -246,7 +283,7 @@ ${params.irrigationAvailable !== undefined ? `Irrigation Available: ${params.irr
 ${params.farmSize ? `Farm Size: ${params.farmSize} hectares` : ''}
 ${params.multiCrop ? `Multi Crop: ${params.multiCrop}` : ''}
 
-Please provide detailed crop recommendations for this agricultural location in strict JSON format as per the system instructions. IF THE LOCATION IS NOT SUITABLE FOR AGRICULTURE, STATE REASON CLEARLY IN THE RESPONSE. CITY AREA, OCEAN, DESERT, MOUNTAINOUS AREAS ARE NOT SUITABLE FOR AGRICULTURE.`;
+Provide detailed crop recommendations for this agricultural location ONLY IF there is no housing on the given location and is suitable for agriculture. Return ONLY the JSON object (no markdown, no code fences, no explanatory text. Just the raw JSON.) as specified in the system instructions. IF THE LOCATION IS NOT SUITABLE FOR AGRICULTURE, STATE REASON CLEARLY IN THE RESPONSE. CITY AREA, OCEAN, DESERT, MOUNTAINOUS AREAS ARE NOT SUITABLE FOR AGRICULTURE.`;
 
 const requestBody: any = {
    contents: [
