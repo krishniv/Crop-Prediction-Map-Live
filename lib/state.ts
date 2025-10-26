@@ -3,20 +3,20 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 import { create } from 'zustand';
-import { itineraryPlannerTools } from './tools/itinerary-planner';
+import { agriculturalTools } from './tools/agricultural-tools';
 
-export type Template = 'itinerary-planner';
+export type Template = 'agricultural-advisor';
 
 const toolsets: Record<Template, FunctionCall[]> = {
-  'itinerary-planner': itineraryPlannerTools,
+  'agricultural-advisor': agriculturalTools,
 };
 
 import {
-  SYSTEM_INSTRUCTIONS,
+  AGRICULTURAL_AGENT_PROMPT,
   SCAVENGER_HUNT_PROMPT,
 } from './constants.ts';
 const systemPrompts: Record<Template, string> = {
-  'itinerary-planner': SYSTEM_INSTRUCTIONS,
+  'agricultural-advisor': AGRICULTURAL_AGENT_PROMPT,
 };
 
 import { DEFAULT_LIVE_API_MODEL, DEFAULT_VOICE } from './constants';
@@ -57,7 +57,7 @@ export const useSettings = create<{
   setPersona: (persona: string) => void;
   activateEasterEggMode: () => void;
 }>(set => ({
-  systemPrompt: systemPrompts['itinerary-planner'],
+  systemPrompt: systemPrompts['agricultural-advisor'],
   model: DEFAULT_LIVE_API_MODEL,
   voice: DEFAULT_VOICE,
   isEasterEggMode: false,
@@ -125,8 +125,8 @@ export const useTools = create<{
   template: Template;
   setTemplate: (template: Template) => void;
 }>(set => ({
-  tools: itineraryPlannerTools,
-  template: 'itinerary-planner',
+  tools: agriculturalTools,
+  template: 'agricultural-advisor',
   setTemplate: (template: Template) => {
     set({ tools: toolsets[template], template });
     useSettings.getState().setSystemPrompt(systemPrompts[template]);
@@ -248,20 +248,44 @@ export interface MapMarker {
   placeId?: string;
 }
 
+export interface MapRectangularOverlay {
+  center: {
+    lat: number;
+    lng: number;
+    altitude: number;
+  };
+  corners: {
+    northEast: { lat: number; lng: number; altitude: number };
+    northWest: { lat: number; lng: number; altitude: number };
+    southEast: { lat: number; lng: number; altitude: number };
+    southWest: { lat: number; lng: number; altitude: number };
+  };
+  width: number; // in meters
+  height: number; // in meters
+  label: string;
+  color: string;
+}
+
 export const useMapStore = create<{
   markers: MapMarker[];
+  rectangularOverlays: MapRectangularOverlay[];
   cameraTarget: Map3DCameraProps | null;
   preventAutoFrame: boolean;
   setMarkers: (markers: MapMarker[]) => void;
   clearMarkers: () => void;
+  setRectangularOverlays: (overlays: MapRectangularOverlay[]) => void;
+  clearRectangularOverlays: () => void;
   setCameraTarget: (target: Map3DCameraProps | null) => void;
   setPreventAutoFrame: (prevent: boolean) => void;
 }>(set => ({
   markers: [],
+  rectangularOverlays: [],
   cameraTarget: null,
   preventAutoFrame: false,
   setMarkers: markers => set({ markers }),
   clearMarkers: () => set({ markers: [] }),
+  setRectangularOverlays: overlays => set({ rectangularOverlays: overlays }),
+  clearRectangularOverlays: () => set({ rectangularOverlays: [] }),
   setCameraTarget: target => set({ cameraTarget: target }),
   setPreventAutoFrame: prevent => set({ preventAutoFrame: prevent }),
 }));

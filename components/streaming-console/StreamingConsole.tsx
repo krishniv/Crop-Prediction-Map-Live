@@ -9,7 +9,7 @@ import { LiveConnectConfig, Modality, LiveServerContent } from '@google/genai';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-import { useLiveAPIContext } from '../../../contexts/LiveAPIContext';
+import { useLiveAPIContext } from '../../contexts/LiveAPIContext';
 import {
   useSettings,
   useLogStore,
@@ -85,19 +85,9 @@ export default function StreamingConsole() {
           },
         ],
       }));
-    // Using `any` for config to accommodate `speechConfig`, which is not in the
-    // current TS definitions but is used in the working reference example.
+    // Text-only configuration for agricultural form-based application
     const config: any = {
-      responseModalities: [Modality.AUDIO],
-      speechConfig: {
-        voiceConfig: {
-          prebuiltVoiceConfig: {
-            voiceName: voice,
-          },
-        },
-      },
-      inputAudioTranscription: {},
-      outputAudioTranscription: {},
+      responseModalities: [Modality.TEXT],
       systemInstruction: {
         parts: [
           {
@@ -112,68 +102,12 @@ export default function StreamingConsole() {
     };
 
     setConfig(config);
-  }, [setConfig, systemPrompt, tools, voice]);
+  }, [setConfig, systemPrompt, tools]);
 
   useEffect(() => {
     const { addTurn, updateLastTurn, mergeIntoLastAgentTurn } =
       useLogStore.getState();
 
-    const handleInputTranscription = (text: string, isFinal: boolean) => {
-      const turns = useLogStore.getState().turns;
-      const last = turns[turns.length - 1];
-      if (last && last.role === 'user' && !last.isFinal) {
-        updateLastTurn({
-          text: last.text + text,
-          isFinal,
-        });
-      } else {
-        addTurn({ role: 'user', text, isFinal });
-      }
-    };
-
-    const handleOutputTranscription = (text: string, isFinal: boolean) => {
-      const { turns, updateLastTurn, addTurn, mergeIntoLastAgentTurn } =
-        useLogStore.getState();
-      const last = turns[turns.length - 1];
-
-      if (last && last.role === 'agent' && !last.isFinal) {
-        updateLastTurn({
-          text: last.text + text,
-          isFinal,
-        });
-      } else {
-        const lastAgentTurnIndex = turns.map(t => t.role).lastIndexOf('agent');
-        let shouldMerge = false;
-        if (lastAgentTurnIndex !== -1) {
-          const subsequentTurns = turns.slice(lastAgentTurnIndex + 1);
-          if (
-            subsequentTurns.length > 0 &&
-            subsequentTurns.every(t => t.role === 'system')
-          ) {
-            shouldMerge = true;
-          }
-        }
-
-        const turnData: Omit<ConversationTurn, 'timestamp' | 'role'> = {
-          text,
-          isFinal,
-        };
-        if (heldGroundingChunks) {
-          turnData.groundingChunks = heldGroundingChunks;
-          clearHeldGroundingChunks();
-        }
-        if (heldGroundedResponse) {
-          turnData.toolResponse = heldGroundedResponse;
-          clearHeldGroundedResponse();
-        }
-
-        if (shouldMerge) {
-          mergeIntoLastAgentTurn(turnData);
-        } else {
-          addTurn({ ...turnData, role: 'agent' });
-        }
-      }
-    };
 
     const handleContent = (serverContent: LiveServerContent) => {
       const { turns, updateLastTurn, addTurn, mergeIntoLastAgentTurn } =
@@ -248,15 +182,11 @@ export default function StreamingConsole() {
       }
     };
 
-    client.on('inputTranscription', handleInputTranscription);
-    client.on('outputTranscription', handleOutputTranscription);
     client.on('content', handleContent);
     client.on('turncomplete', handleTurnComplete);
     client.on('generationcomplete', handleTurnComplete);
 
     return () => {
-      client.off('inputTranscription', handleInputTranscription);
-      client.off('outputTranscription', handleOutputTranscription);
       client.off('content', handleContent);
       client.off('turncomplete', handleTurnComplete);
       client.off('generationcomplete', handleTurnComplete);

@@ -1,0 +1,104 @@
+.map-overlay-recommendations {
+  /* Position controlled via inline style from React for drag support */
+  position: absolute;
+  max-width: 80%;
+  width: 380px;
+  height: 320px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #0f172a;
+  padding: 12px 14px;
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(16, 24, 40, 0.2);
+  z-index: 1200;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  resize: both; /* allow user to resize */
+  overflow: hidden; /* show scrollbar within inner content */
+  /* Force readable black text color inside the overlay */
+  color: #000;
+}
+
+.map-overlay-recommendations .overlay-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.map-overlay-recommendations .overlay-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.map-overlay-recommendations .recommendation-content {
+  height: 100%;
+  overflow: auto;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  /* Ensure inner text uses the overlay color (black) */
+  color: inherit;
+}
+
+/* JSON pretty styles */
+.json-root {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.json-section h4 {
+  margin: 0 0 6px 0;
+  font-size: 1rem;
+  color: #0b3b2e;
+}
+.json-section .json-value {
+  margin: 0;
+  color: #111;
+}
+.crop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.crop-card {
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.06);
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+.crop-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.crop-name { font-size: 1rem; color: #062e1f; }
+.crop-alloc { font-size: 0.85rem; color: #065f46; background: rgba(6,95,70,0.08); padding: 2px 6px; border-radius: 6px; }
+.crop-rationale { margin: 0 0 8px 0; color: #111; }
+.kv-list { padding-left: 16px; margin: 6px 0; }
+.kv-list li { margin-bottom: 6px; }
+.kv-key { font-weight: 600; color: #0b3b2e; }
+.kv-val { color: #111; }
+.kv-row { display: flex; gap: 8px; margin-bottom: 6px; }
+.kv-key.small { min-width: 120px; font-weight: 600; }
+.kv-val.small { color: #222; }
+.challenge-list { padding-left: 18px; }
+.challenge-list li { margin-bottom: 8px; }
+
+.map-overlay-recommendations .overlay-header {
+  cursor: move;
+  padding-bottom: 6px;
+}
+
+.map-overlay-recommendations:focus {
+  outline: 2px solid rgba(34,197,94,0.25);
+}
+
+/* Small screens: make overlay slightly larger and centered */
+@media (max-width: 768px) {
+  .map-overlay-recommendations {
+    left: 10px;
+    right: 10px;
+    bottom: 14px;
+    width: auto;
+    max-width: none;
+  }
+}
