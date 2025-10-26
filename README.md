@@ -1,173 +1,280 @@
-# Introduction
+# 🌾 AgriConnect - Smart Crop Recommendations Platform
 
-This sample app is for illustration only. It uses both Gemini (including Grounding with Google Maps) and Google Maps Platform services.  It is your responsibility to review the relevant Terms of Service applicable to your region, and you must confirm that your integration will comply with those terms.  This sample app may show products or functionality that are not available in your region under the Terms of Service for that region.
+![AgriConnect Platform](https://img.shields.io/badge/Platform-AgriConnect-green) ![AI Powered](https://img.shields.io/badge/AI-Powered-blue) ![React](https://img.shields.io/badge/React-18.0+-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue)
 
-npm install
-npm run dev
+## 📋 Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Technology Stack](#technology-stack)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [API Integration](#api-integration)
+- [Workflow](#workflow)
+- [Screenshots](#screenshots)
+- [Future Roadmap](#future-roadmap)
+- [Contributing](#contributing)
 
 
-# Setting Up Your Google Maps API Key
+## 🌟 Overview
 
-**IMPORTANT:** This demo uses several Google Maps Platform APIs to function correctly. The API key included in the sample code is for demonstration purposes only and is subject to restrictive quotas that may cause the application to fail. To ensure a stable experience and to explore the full capabilities of the application, you **must obtain and use your own API key**.
+AgriConnect is an AI-powered agricultural platform that provides smart crop recommendations for farmers. The platform combines advanced AI algorithms with environmental data to offer personalized farming insights, soil analysis, and crop suggestions based on location, soil type, climate conditions, and seasonal patterns.
 
-### 1. Get Your API Key
+### Key Capabilities
 
-Follow the instructions in the official documentation to create a new API key. You will need a Google Cloud project with billing enabled.
+- **Smart Analysis**: Data-driven insights for better farming decisions
+- **Maximize Yield**: Optimize harvest with tailored recommendations
+- **Climate Aware**: Recommendations based on local weather patterns
+- **AI-Powered Soil Analysis**: Detailed nutrient analysis and fertilizer recommendations
+- **Interactive 3D Maps**: Visual farm location mapping with rectangular overlays
+- **Real-time Recommendations**: Dynamic crop suggestions based on farm parameters
 
-**[Get an API Key](https://developers.google.com/maps/documentation/javascript/get-api-key)**
+## 🚀 Features
 
-### 2. Enable Required APIs
+### 1. **Farm Details Input System**
+- **Location Services**: GPS-based farm location detection
+- **Manual Input**: Latitude and longitude coordinates
+- **Farm Parameters**: Size, soil type, climate zone, season
+- **Environmental Data**: Rainfall, temperature, irrigation availability
 
-In your Google Cloud project's dashboard, navigate to the "APIs & Services" section and enable the following APIs:
+### 2. **AI-Powered Soil Analysis** 🔬
+- **Image Upload**: Upload soil photos for analysis
+- **Nutrient Analysis**: Detailed soil composition assessment
+- **Fertilizer Recommendations**: Specific fertilizer suggestions
+- **Soil Type Identification**: Automatic soil classification
+- **Crop Suitability**: Recommendations based on soil analysis
 
-*   **Geocoding API**: Converts addresses into geographic coordinates.
-*   **Places API (New)**: Fetches detailed information about points of interest.
-*   **Maps Elevation API**: Gets altitude data for 3D map views.
-*   **Maps Grounding API**: Allows the Gemini model to access real-time Maps data.
-*   **Maps JavaScript API**: Loads and displays the map.
+### 3. **Interactive 3D Map Visualization** 🗺️
+- **Google Maps 3D Integration**: High-resolution satellite imagery
+- **Farm Boundary Marking**: Red rectangular overlays for farm areas
+- **Corner Point Markers**: Precise farm boundary definition
+- **Real-time Updates**: Dynamic map updates based on input parameters
+- **Zoom and Pan**: Interactive map navigation
 
-### 3. Configure the API Key in the Application
+### 4. **Smart Crop Recommendations** 🌱
+- **Disease Management**: Disease-resistant variety suggestions
+- **Weed Competition**: Strategic weeding and mulching advice
+- **Plant Spacing**: Optimal spacing recommendations
+- **Seasonal Planning**: Time-based crop suggestions
+- **Yield Optimization**: Data-driven yield improvement strategies
 
-Once you have your key, replace the placeholder key in the code.
+### 5. **News Integration** 📰
+- **Farm-o-Buzz**: Agricultural news and updates
+- **Real-time Information**: Latest farming trends and technologies
+- **External Links**: Direct access to agricultural news sources
 
-1.  Open the file `App.tsx`.
-2.  Find the `<APIProvider>` component.
-3.  Replace the value of the `apiKey` prop with your own key.
+## 🛠️ Technology Stack
 
-```typescript
-// In App.tsx
+### Frontend
+- **React 18+**: Modern UI framework
+- **TypeScript**: Type-safe development
+- **Vite**: Fast build tool and development server
+- **CSS3**: Modern styling with responsive design
+- **Google Maps 3D API**: Interactive map visualization
 
-<APIProvider
-    version={'alpha'}
-    apiKey={'YOUR_API_KEY_HERE'} // <--- REPLACE THE EXISTING KEY HERE
-    solutionChannel={"gmp_aistudio_itineraryapplet_v1.0.0"}>
-  <AppComponent />
-</APIProvider>
+### AI & APIs
+- **Google Gemini 2.5 Flash**: AI-powered soil analysis
+- **Google Maps API**: 3D map integration
+- **Geolocation API**: GPS-based location services
+
+### Development Tools
+- **ESLint**: Code linting and quality assurance
+- **Prettier**: Code formatting
+- **Git**: Version control
+
+## 📦 Installation
+
+### Prerequisites
+- Node.js (v16 or higher)
+- npm 
+- Google Maps API key
+- Google Gemini API key
+
+### Setup Instructions
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-username/agri-connect.git
+   cd agri-connect
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Environment Configuration**
+   Create a `.env` file in the root directory:
+   ```env
+   GEMINI_API_KEY=your_gemini_api_key_here
+   MAPS_API_KEY=your_google_maps_api_key_here
+   ```
+
+4. **Start development server**
+   ```bash
+   npm run dev
+   ```
+
+5. **Open in browser**
+   Navigate to `http://localhost:3000`
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `GEMINI_API_KEY` | Google Gemini API key for AI analysis | Yes |
+| `MAPS_API_KEY` | Google Maps API key for map functionality | Yes |
+
+
+## 📖 Usage
+
+### 1. **Farm Setup**
+1. Open the AgriConnect platform
+2. Click "Use Current Location" or manually enter coordinates
+3. Fill in farm details:
+   - Soil type (Loamy, Clayey, Sandy, etc.)
+   - Climate zone (Temperate, Tropical, etc.)
+   - Season (Spring, Summer, Fall, Winter)
+   - Farm size in hectares
+   - Annual rainfall and temperature
+   - Irrigation availability
+
+### 2. **Soil Analysis**
+1. Click the "🔬 Soil Analysis" button
+2. Upload a clear photo of your soil sample
+3. Click "Analyze Soil" to get AI-powered analysis
+4. Review detailed nutrient analysis and fertilizer recommendations
+5. Use insights for crop planning
+
+### 3. **Map Visualization**
+1. Enter farm coordinates to see your location on the 3D map
+2. Red markers will show your farm boundaries
+3. Use the map to verify farm area and location accuracy
+4. Zoom and pan to explore surrounding areas
+
+### 4. **Crop Recommendations**
+1. After soil analysis, click "Get Crop Recommendations"
+2. Review AI-generated suggestions based on:
+   - Soil composition
+   - Climate conditions
+   - Seasonal factors
+   - Disease resistance
+   - Yield optimization
+
+## 🔄 Workflow
+
+```mermaid
+graph TD
+    A[User Opens AgriConnect] --> B[Enter Farm Details]
+    B --> C[Upload Soil Image]
+    C --> D[AI Soil Analysis]
+    D --> E[Generate Recommendations]
+    E --> F[Display on 3D Map]
+    F --> G[Export/Share Results]
+    
+    B --> H[Manual Location Input]
+    H --> I[GPS Location Detection]
+    I --> F
+    
+    D --> J[Soil Type Identification]
+    D --> K[Nutrient Analysis]
+    D --> L[Fertilizer Suggestions]
+    
+    E --> M[Disease Management]
+    E --> N[Weed Control]
+    E --> O[Plant Spacing]
 ```
 
-> Failure to use your own key may result in the map failing to load or grounding features being unavailable due to quota limits on the shared demo key.
+## 📸 Screenshots
 
-# Application Architecture: Interactive Day Planner
+### Main Dashboard
+![Main Dashboard](images\mai_portal.png)
 
-This document outlines the architecture of the Interactive Day Planner, a web application built with React that showcases a real-time, voice-driven conversational experience using the Gemini API, grounded with data from Google Maps and visualized on a Photorealistic 3D Map.
+### Soil Analysis Interface
+![Soil Analysis](images\soil_analysis_portal.png)
 
-## 1. Overall Structure & Core Technologies
+### 3D Map with Farm Overlay
+![3D Map](images\3dmap.jpeg)
 
-The application is a **React-based Single Page Application (SPA)**. The architecture is modular, separating concerns into distinct components, hooks, contexts, and utility libraries.
+### Crop Recommendations
+![Crop Recommendations](images\recommedation.png)
 
--   **`index.html` & `index.tsx`**: The entry point of the application. It uses an `importmap` to manage modern JavaScript modules and renders the main `App` component into the DOM.
--   **`App.tsx`**: The root component that orchestrates the entire user experience. It initializes context providers and manages the state for the map and grounding responses.
--   **`/components`**: Contains all the reusable React components that make up the UI, such as the `ControlTray` for user input, the `StreamingConsole` for displaying the conversation, and the `Sidebar` for settings.
--   **`/contexts`**: Uses React's Context API to provide global state and functionality. The `LiveAPIContext` is crucial, making the Gemini Live session available throughout the app.
--   **`/hooks`**: Home to custom React hooks, with `use-live-api.ts` being the most significant. This hook encapsulates the logic for managing the connection to the Gemini Live API.
--   **`/lib`**: A collection of client-side libraries and helper functions. This includes the `GenAILiveClient` wrapper, audio processing utilities, state management configuration (Zustand), and tool definitions.
--   **State Management**: The app uses **Zustand**, a lightweight state management library, to handle global UI state, conversation logs, and settings (`lib/state.ts`).
+## 🔮 Future Roadmap
 
-## 2. Codebase Tour
+### Phase 1: Enhanced AI Features
+- **Predictive Analytics**: Crop yield prediction models
+- **Disease Detection**: Advanced plant disease identification
+- **Pest Management**: AI-powered pest detection and control
 
-To help you navigate the project, here’s a tour of the most important files and directories:
+### Phase 2: Advanced Mapping
+- **NDVI Analysis**: Vegetation health mapping
+- **Soil Moisture Mapping**: Real-time soil moisture visualization
+- **Crop Rotation Planning**: Multi-season crop rotation suggestions
 
--   **`App.tsx`**: The main application component. It acts as the primary view controller, orchestrating the layout of all UI components and, most importantly, reacting to global state changes (for markers, routes, and camera targets) to update the 3D map via the `MapController`. It's the central hub that wires everything together.
--   **`hooks/use-live-api.ts`**: The heart of the Gemini Live integration. This custom hook encapsulates all the logic for connecting to the Gemini Live API, managing the session, and handling real-time events like incoming audio, transcriptions, and tool call requests from the model.
--   **`lib/genai-live-client.ts`**: A low-level wrapper around the `@google/genai` SDK. This class simplifies the connection lifecycle and uses an event-emitter pattern to broadcast server messages, providing a clean interface for the `use-live-api` hook to consume.
--   **`lib/tools/tool-registry.ts`**: This is where the application's function-calling capabilities are defined and implemented. It contains the logic for tools like `mapsGrounding` (for searching and discovering places), `frameEstablishingShot` (for wide, establishing views of a city), and the versatile `frameLocations` tool (for displaying specific, known points of interest). These tools are invoked by the Gemini model to interact with Google Maps and update the application's state.
--   **`lib/map-controller.ts`**: An abstraction layer for all interactions with the Photorealistic 3D Map. This class provides a clean, imperative API (e.g., `addMarkers`, `flyTo`, `frameEntities`) that decouples the rest of the application from the specific implementation details of the `<gmp-map-3d>` web component.
 
-### Advanced Concepts
+### Phase 3: Community Features
+- **Farmer Network**: Connect with local farmers
+- **Knowledge Sharing**: Community-driven farming tips
+- **Market Integration**: Crop pricing and market trends
+- **Expert Consultation**: Connect with agricultural experts
 
-For developers looking for a deeper dive, the following files and methods use advanced syntax or architectural patterns that are worth studying:
+### Phase 4: Mobile Application
+- **iOS App**: Native iOS application
+- **Android App**: Native Android application
+- **Offline Mode**: Work without internet connection
+- **Push Notifications**: Real-time alerts and updates
 
--   **`hooks/use-live-api.ts` - The `onToolCall` Handler**
-    -   **Concept:** This asynchronous function is the central dispatcher for all function calls requested by the Gemini model.
-    -   **Why it's advanced:** It orchestrates multiple complex operations: managing UI loading states (`isAwaitingFunctionResponse`), dynamically looking up and executing functions from the `toolRegistry`, passing a shared `toolContext` object to decouple tools from the UI, and packaging results to send back to the API. This demonstrates a sophisticated event-driven, function-calling pattern.
+## 🚀 Deployment
 
--   **`lib/tools/tool-registry.ts` - The `mapsGrounding` Implementation**
-    -   **Concept:** This function is a self-contained "tool" that the AI can use. It handles a user query, gets grounded data from Google Maps, and updates the application's state.
-    -   **Why it's advanced:** It showcases a complex asynchronous workflow. It makes an initial API call to get grounding data, processes that data to extract Place IDs, makes a *second* set of parallel API calls to the Places library to get location details, and finally updates a global Zustand store (`useMapStore`). This multi-step process that interacts with multiple services and updates state from outside the React component tree is a powerful pattern.
+### Production Build
+```bash
+npm run build
+# or
+yarn build
+```
 
--   **`lib/look-at.ts` - The `lookAtWithPadding` Function**
-    -   **Concept:** This utility calculates the precise camera position (`center`, `range`, `tilt`) needed to frame a set of geographic points within the map's visible area, accounting for UI elements that cover parts of the screen.
-    -   **Why it's advanced:** The implementation involves non-trivial mathematics, including trigonometric calculations (sine, cosine, tangent) and geometric transformations to convert screen-space UI padding into a geographical camera offset. The logic also accounts for the camera's heading, requiring it to rotate the offset vector, which adds another layer of complexity.
+### Deploy to Vercel
+```bash
+npm install -g vercel
+vercel --prod
+```
 
--   **`lib/audio-streamer.ts` - The `scheduleNextBuffer` Method**
-    -   **Concept:** This method manages the seamless playback of incoming raw audio chunks from the Gemini API.
-    -   **Why it's advanced:** It uses the low-level Web Audio API, which is inherently complex. The method manually manages a queue of audio buffers, calculates precise scheduling times (`scheduledTime`) to avoid gaps or overlaps in playback, and uses timers (`setTimeout`) to ensure the queue is processed efficiently without blocking the main thread.
+### Deploy to Netlify
+```bash
+npm install -g netlify-cli
+netlify deploy --prod --dir=dist
+```
 
--   **The `components/map-3d/` Directory**
-    -   **Concept:** This set of files creates a robust React component wrapper around the `<gmp-map-3d>` web component.
-    -   **Why it's advanced:** It combines several advanced React and TypeScript features:
-        -   **Type Augmentation (`map-3d-types.ts`):** It uses TypeScript's `declare module` to add type definitions for the experimental Maps 3D library directly to the `@vis.gl/react-google-maps` package, a technique known as declaration merging.
-        -   **Ref Forwarding (`map-3d.tsx`):** It uses `forwardRef` and `useImperativeHandle` to give parent components controlled access to the underlying web component's DOM element and its methods.
-        -   **Microtask Batching (`use-map-3d-camera-events.ts`):** It uses `queueMicrotask` to batch multiple camera change events that fire in quick succession into a single state update, which is a sophisticated performance optimization technique.
+## 🤝 Contributing
 
-## 3. Key Concepts Explained
+We welcome contributions! Please follow these steps:
 
-This application brings together several powerful technologies. Here’s a brief overview of each:
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
--   **Gemini Live API**: This is the core technology for the real-time, bidirectional voice conversation. It processes streams of audio input from the user's microphone and returns human-like spoken audio responses from the model, creating a natural conversational experience. The primary integration point is the **`hooks/use-live-api.ts`** file.
--   **Maps Grounding**: This feature allows the Gemini model to access Google Maps' vast, real-time information to provide accurate and relevant answers to location-based questions. When the model needs information about a place, it invokes the **`mapsGrounding`** tool (implemented in **`lib/tools/tool-registry.ts`**), which makes a grounded call to the Gemini API and processes the results.
--   **`@vis.gl/react-google-maps`**: This library simplifies the integration of Google Maps into a React application. It provides the **`<APIProvider>`** component, which handles loading the Google Maps JavaScript API, and the **`useMapsLibrary`** hook, which allows components to safely access specific Maps libraries (like `places` or `maps3d`) only after they are loaded and ready.
--   **Photorealistic 3D Maps**: The immersive map view is powered by the **`<gmp-map-3d>`** web component, an experimental feature of the Google Maps JavaScript API. To make it easier to use in a declarative React environment, a custom wrapper component is provided in **`components/map-3d/`**.
+### Development Guidelines
+- Follow TypeScript best practices
+- Write comprehensive tests
+- Update documentation
+- Follow the existing code style
+- Ensure all tests pass
 
-## 4. Gemini Live API Integration
 
-The core of the conversational experience is powered by the Gemini Live API, which enables real-time, low-latency, bidirectional audio streaming.
+## 🙏 Acknowledgments
 
--   **Connection Management**: The `GenAILiveClient` class (`lib/genai-live-client.ts`) is a custom wrapper around the `@google/genai` SDK. It simplifies the connection lifecycle and uses an event-emitter pattern to broadcast server messages (e.g., `open`, `close`, `audio`, `toolcall`, `inputTranscription`).
--   **`useLiveApi` Hook**: This hook (`hooks/use-live-api.ts`) manages the instance of `GenAILiveClient`. It exposes functions to `connect` and `disconnect` and handles incoming events from the API. Crucially, it contains the `onToolCall` handler that processes function call requests from the model.
--   **Audio Handling**:
-    -   **Input**: The `AudioRecorder` class (`lib/audio-recorder.ts`) captures microphone input, processes it using an `AudioWorklet`, and sends PCM audio data to the Gemini Live API via the `sendRealtimeInput` method.
-    -   **Output**: The `AudioStreamer` class (`lib/audio-streamer.ts`) receives PCM audio data from the API, queues it, and plays it back seamlessly using the Web Audio API, providing the AI's voice response.
--   **Real-time Transcription**: The application listens for `inputTranscription` and `outputTranscription` events to display the conversation text in the `StreamingConsole` component as it happens, including interim results for a more responsive feel.
+- Google Maps API for mapping services
+- Google Gemini AI for intelligent analysis
+- React community for excellent documentation
+- Open source contributors and maintainers
 
-## 5. Grounding with Google Maps
+---
 
-To provide accurate, real-world information, the application uses Gemini's ability to ground its responses with Google Maps data.
+**Made with ❤️ for farmers worldwide**
 
--   **Tool-Based Invocation**: The model is configured with a `mapsGrounding` tool definition. When the user asks a question that requires location-based information (e.g., "Find some good pizza places in Chicago"), the Gemini model intelligently decides to call this function.
--   **Tool Call Handling**: The `onToolCall` handler in the `useLiveApi` hook intercepts this request. It then calls a helper function (`lib/maps-grounding.ts`) which makes a *separate* request to the Gemini API, this time explicitly invoking the `googleMaps` tool with the user's query.
--   **Data Processing**: The response from this grounding call is a rich `GenerateContentResponse` object containing not only the model's text response but also structured `groundingMetadata`. The `mapsGrounding` tool implementation processes this response, extracting place IDs from the metadata.
--   **UI Updates**: Once place details (like location coordinates and display name) are fetched using the Google Maps Places library, the application updates its state, causing markers for these locations to be rendered on the 3D map. Additionally, the `GroundingWidget` component can be used to display a rich, interactive list of places using a `contextToken` provided in the grounding response.
-
-## 6. Google Maps Photorealistic 3D Maps
-
-The visual centerpiece of the application is the Photorealistic 3D Map, which provides an immersive and detailed view of the locations being discussed.
-
--   **Web Component Integration**: The map is implemented using the `<gmp-map-3d>` web component, part of the Google Maps JavaScript API's alpha channel.
--   **React Wrapper**: A custom React component, `Map3D` (`components/map-3d/map-3d.tsx`), is used to wrap the web component, making it easy to integrate into the React component tree and manage its properties via props.
--   **Camera Control**: The application controls the map's camera in two main ways:
-    1.  **Direct Tool Commands**: Tools like `frameEstablishingShot` and `frameLocations` (when called with `markers: false`) allow the Gemini model to directly command the map to fly to a specific location or to frame a set of coordinates. These tools calculate the optimal camera view and trigger a "fly-to" animation.
-    2.  **Reactive State-Driven Framing**: The application's primary method for displaying points of interest is reactive. When tools like `mapsGrounding` or `frameLocations` (with `markers: true`) are called, they don't command the camera directly. Instead, they update a global list of markers in the application's state. A `useEffect` hook in the main `App` component listens for changes to this list, automatically calculates the best camera position to view the new markers using the `lookAtWithPadding` utility, and then triggers the camera animation. This decouples the tool logic from the view logic.
-
-## 7. `@vis.gl/react-google-maps` Library
-
-This library acts as a foundational layer for integrating Google Maps into the React application.
-
--   **API Loading**: The `<APIProvider>` component is wrapped around the entire app. It handles the asynchronous loading of the Google Maps JavaScript API script, ensuring all necessary libraries are available before they are used.
--   **Library Access**: The `useMapsLibrary` hook is used extensively to gain access to specific Maps libraries when needed. For instance, `useMapsLibrary('places')` is used to fetch place details and render the `GroundingWidget`, while `useMapsLibrary('maps3d')` is used to interact with the 3D map custom elements. This hook-based approach ensures that components only render after their required map libraries are loaded and ready.
-
-## 8. Making This Demo Your Own
-
-This demo is designed as an interactive sandbox. You can easily customize it to explore different personas, conversational flows, and application logic. Here are two ways to get started.
-
-### Basic Customization: Crafting a New Persona and Use Case
-
-The easiest way to change the demo's behavior is by editing the **system instructions**. The AI's personality, goals, and conversational flow are all defined in this prompt. You can edit it live in the **Settings** sidebar or more permanantely in the `lib/constants.ts` file. 
-
-A great example of this is the hidden **"Scavenger Hunt"** persona. By rapidly clicking the settings icon six times, you activate a completely different system prompt (`SCAVENGER_HUNT_PROMPT` in `lib/constants.ts`). This prompt transforms the helpful itinerary planner into a playful game master named "ClueMaster Cory." It uses the **exact same tools** but in a creative new way to create a totally different user experience, guiding the user through a series of riddles to find famous landmarks.
-
-Try crafting your own persona! You could create a formal hotel concierge, a laid-back local guide, or a historical expert.
-
-### Advanced Customization: Adding New Tools and Logic
-
-For more significant changes, you can define entirely new tools and write a system prompt that tells the AI how to use them. This lets you build completely new application behaviors. Tools are defined in `lib/tools/itinerary-planner.ts`, and their implementations (the code that actually runs) are in `lib/tools/tool-registry.ts`.
-
-Here are a couple of sample prompts to get you started on creating a simple "City Explorer" experience:
-
-1.  **Prompt to modify an existing tool:**
-
-    > "I want to add a new feature to the `frameLocations` tool. It should accept an optional `zoomLevel` parameter, which can be 'close', 'medium', or 'far'. This will adjust the camera's `range` accordingly. Please update the tool's definition in `lib/tools/itinerary-planner.ts` and its implementation in `lib/tools/tool-registry.ts`."
-
-2.  **Prompt to create a new system instruction that uses the new feature:**
-
-    > "Now, create a new system instruction for a 'City Explorer' persona. This persona should ask the user for a few places they want to see. Then, it MUST use the `frameLocations` tool to show all places on the map. It should then ask the user if they want a closer look and use the new `zoomLevel` parameter if they say yes."
+*AgriConnect - Empowering farmers with AI-driven agricultural insights*
