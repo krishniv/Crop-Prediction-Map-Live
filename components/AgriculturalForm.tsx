@@ -533,8 +533,8 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
     <>
       <div className="agricultural-form">
         <div className="form-header">
-          <h2>🌱Farm Details Required</h2>
-          <p>Please Input your farm details below.</p>
+          <h2>Input Farm Details</h2>
+          {/* <p>Please Input your farm details below.</p> */}
         </div>
 
         <form onSubmit={handleSubmit} className="form-content">
@@ -582,177 +582,7 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
     <br />
   </button>
 </div>
-          {/* </div> */}
 
-          {/* Required Parameters */}
-          {/* <div className="form-section">
-            <h3>🌍 Required Parameters</h3>
-            <div className="input-group">
-              <div className="input-field">
-                <label htmlFor="soilType">Soil Type *</label>
-                <select
-                  id="soilType"
-                  value={formData.soilType}
-                  onChange={(e) => handleInputChange('soilType', e.target.value)}
-                  required
-                >
-                  <option value="clay">Clay</option>
-                  <option value="sandy">Sandy</option>
-                  <option value="loamy">Loamy</option>
-                  <option value="silt">Silt</option>
-                  <option value="peat">Peat</option>
-                </select>
-              </div>
-              <div className="input-field">
-                <label htmlFor="climate">Climate Zone *</label>
-                <select
-                  id="climate"
-                  value={formData.climate}
-                  onChange={(e) => handleInputChange('climate', e.target.value)}
-                  required
-                >
-                  <option value="tropical">Tropical</option>
-                  <option value="arid">Arid</option>
-                  <option value="temperate">Temperate</option>
-                  <option value="continental">Continental</option>
-                  <option value="polar">Polar</option>
-                </select>
-              </div>
-              <div className="input-field">
-                <label htmlFor="season">Season *</label>
-                <select
-                  id="season"
-                  value={formData.season}
-                  onChange={(e) => handleInputChange('season', e.target.value)}
-                  required
-                >
-                  <option value="spring">Spring</option>
-                  <option value="summer">Summer</option>
-                  <option value="fall">Fall</option>
-                  <option value="winter">Winter</option>
-                </select>
-              </div>
-              <div className="input-field">
-                    <label htmlFor="farmSize">Farm Size (hectares)</label>
-                    <input
-                      type="number"
-                      id="farmSize"
-                      value={formData.farmSize || ''}
-                      onChange={(e) =>
-                        handleInputChange('farmSize', parseFloat(e.target.value) || undefined)
-                      }
-                      placeholder="e.g., 10"
-                      min="0"
-                      step="any"
-                    />
-                  </div>
-            </div>
-          </div> */}
-
-          {/* Optional Parameters */}
-          {/* <div className="form-section">
-            <button
-              type="button"
-              className="toggle-optional"
-              onClick={() => setShowOptional(!showOptional)}
-            >
-              {showOptional ? '▼' : '▶'} Optional Parameters
-            </button>
-
-            {showOptional && (
-              <div className="optional-params">
-                <div className="input-group">
-                  <div className="input-field">
-                    <label htmlFor="rainfall">Annual Rainfall (mm)</label>
-                    <input
-                      type="number"
-                      id="rainfall"
-                      value={formData.rainfall || ''}
-                      onChange={(e) =>
-                        handleInputChange('rainfall', parseFloat(e.target.value) || undefined)
-                      }
-                      placeholder="e.g., 800"
-                      min="0"
-                    />
-                  </div>
-                  <div className="input-field">
-                    <label htmlFor="temperature">Average Temperature (°C)</label>
-                    <input
-                      type="number"
-                      id="temperature"
-                      value={formData.temperature || ''}
-                      onChange={(e) =>
-                        handleInputChange('temperature', parseFloat(e.target.value) || undefined)
-                      }
-                      placeholder="e.g., 25"
-                      step="any"
-                    />
-                  </div> */}
-                  {/* <div className="input-field">
-                    <label htmlFor="farmSize">Farm Size (hectares)</label>
-                    <input
-                      type="number"
-                      id="farmSize"
-                      value={formData.farmSize || ''}
-                      onChange={(e) =>
-                        handleInputChange('farmSize', parseFloat(e.target.value) || undefined)
-                      }
-                      placeholder="e.g., 10"
-                      min="0"
-                      step="any"
-                    />
-                  </div> */}
-                {/* <div
-  className="input-group"
-  style={{
-    display: 'flex',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    gap: '40px',
-  }}
-> */}
-  {/* Left: Multi Crop */}
-  {/* <div className="input-field" style={{ flex: 1 }}>
-    <label htmlFor="multiCrop">Multi Crop</label>
-    <select
-      id="multiCrop"
-      value={formData.multiCrop || ''}
-      onChange={(e) => handleInputChange('multiCrop', e.target.value)}
-      required
-      style={{
-        width: '180%',
-        height: '40px',
-        borderRadius: '6px'
-      }}
-    >
-      <option value="">Select</option>
-      <option value="Yes">Yes</option>
-      <option value="No">No</option>
-    </select>
-  </div> */}
-
-  {/* Right: Irrigation Available */}
-  {/* <div
-    className="input-field checkbox-field"
-    style={{ flex: 1, display: 'flex', alignItems: 'right', marginTop: '16px' }}
-  >
-    <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-      <input
-        type="checkbox"
-        checked={formData.irrigationAvailable || false}
-        onChange={(e) =>
-          handleInputChange('irrigationAvailable', e.target.checked)
-        }
-      />
-      Irrigation Available
-    </label>
-  </div>
-</div>
-
-                </div>
-              </div>
-            )}
-          </div> */}
           <div className="form-section">
   <h3>Required Parameters</h3>
   <div className="input-group">
@@ -834,6 +664,7 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
         }
         placeholder="e.g., 800"
         min="0"
+        max="12000"
       />
     </div>
 
@@ -848,6 +679,8 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
           handleInputChange('temperature', parseFloat(e.target.value) || undefined)
         }
         placeholder="e.g., 25"
+        min="0"
+        max="60"
         step="any"
       />
     </div>

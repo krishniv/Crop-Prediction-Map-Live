@@ -1207,12 +1207,7 @@ gmp-place-details-compact {
 }
 
 /* Agricultural Form Styles */
-/* .agricultural-form {
-  z-index: 1000;
-  padding: 24px;
-  background: var(--gray-900);
-  color: var(--text);
-} */
+
 .agricultural-form {
   z-index: 1000;
   padding: 24px;
@@ -1222,27 +1217,6 @@ gmp-place-details-compact {
   box-shadow: 0 0 20px rgba(103, 240, 156, 0.1);
   border: 1px solid rgba(103, 240, 156, 0.15);
 }
-
-/* .form-header {
-  margin-bottom: 32px;
-  text-align: center;
-  border-bottom: 2px solid var(--agricultural-green);
-  padding-bottom: 16px;
-}
-
-.form-header h2 {
-  color: var(--agricultural-light-green);
-  margin: 0 0 8px 0;
-  font-size: 28px;
-  font-weight: 600;
-}
-
-.form-header p {
-  color: var(--gray-300);
-  margin: 0;
-  font-size: 16px;
-  line-height: 1.5;
-} */
 
 .form-header {
   margin-bottom: 40px;
@@ -1267,12 +1241,7 @@ gmp-place-details-compact {
   gap: 24px;
 }
 
-/* .form-section {
-  background: var(--gray-800);
-  border: 1px solid var(--agricultural-green);
-  border-radius: 12px;
-  padding: 20px;
-} */
+
 .form-section {
   background: #0b2f23;
   border: 1px solid rgba(103, 240, 156, 0.25);
@@ -1309,16 +1278,7 @@ gmp-place-details-compact {
   font-weight: 500;
 }
 
-/* .input-field input,
-.input-field select {
-  background: var(--gray-700);
-  border: 1px solid var(--agricultural-green);
-  border-radius: 8px;
-  color: var(--text);
-  padding: 12px;
-  font-size: 14px;
-  transition: all 0.2s ease;
-} */
+
 .input-field input,
 .input-field select {
   background: #0e241b; /* deep green background */
@@ -1357,11 +1317,7 @@ gmp-place-details-compact {
   margin: 0;
 }
 
-/* .checkbox-field input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--agricultural-green);
-} */
+
 .checkbox-field input[type="checkbox"] {
   accent-color: #67f09c; /* same neon green accent */
   transform: scale(1.1);
@@ -1399,27 +1355,12 @@ gmp-place-details-compact {
   }
 }
 
-/* .form-actions {
-  margin-top: 24px;
-  text-align: center;
-} */
+
 .form-actions {
   margin-top: 24px;
   text-align: center; /* this alone will center an inline-block button */
 }
 
-/* .submit-button {
-  background: linear-gradient(135deg, var(--agricultural-green) 0%, var(--agricultural-light-green) 100%);
-  border: none;
-  border-radius: 12px;
-  color: white;
-  padding: 16px 32px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(74, 124, 89, 0.3);
-} */
 .submit-button {
   display: block;       /* makes it behave like a block element */
   margin: 0 auto;       /* centers it horizontally */
@@ -1459,7 +1400,9 @@ gmp-place-details-compact {
 /* ===================================================== */
 
 /* 1️⃣ HERO SECTION */
-.agriconnect-hero {
+
+
+/* .agriconnect-hero {
   display: block;
   width: 100%;
   background: linear-gradient(180deg, #00281f 0%, #041b16 100%);
@@ -1468,7 +1411,7 @@ gmp-place-details-compact {
   padding: 60px 0 70px;
   border-bottom: 1px solid rgba(103, 240, 156, 0.1);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-}
+} */
 
 .agriconnect-hero-content {
   max-width: 1100px;
@@ -1656,36 +1599,113 @@ gmp-place-details-compact {
   }
 }
 
-/* @media (max-width: 768px) {
-  .app-layout {
-    flex-direction: column;
-  }
-
-  .form-panel {
-    width: 100%;
-    min-width: unset;
-    height: 50vh;
-  }
-
-  .map-panel {
-    height: 50vh;
-  }
-
-  .input-group {
-    grid-template-columns: 1fr;
-  }
-
-  .agricultural-form {
-    padding: 16px;
-  }
-}
- */
 /* ============================== */
 /* 🌾 FIX: Hero + Map Overlap */
 /* ============================== */
 
 /* Ensure hero sits as a full independent section */
+:root {
+  --agriconnect-bg: #14251f;             /* lighter than before */
+  --agriconnect-card-bg: #1c332c;        /* mid-tone for cards */
+  --agriconnect-border: #2a4b41;
+  --agriconnect-text: #e9f7f0;
+  --agriconnect-subtext: #a8cdbc;
+  --agriconnect-accent: #67f09c;
+  --agriconnect-accent-light: #8bf7b5;
+}
+
+.breakout {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  border-radius: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+
+
 .agriconnect-hero {
+  background: linear-gradient(180deg, #14251f 0%, #1a3a31 100%);
+  color: #e0f6e8;
+
+  display: flex;                 /* enables centering */
+  flex-direction: column;        /* stack title & paragraph */
+  justify-content: center;       /* vertical centering */
+  align-items: center;           /* horizontal centering */
+
+  text-align: center;            /* center text alignment */
+  padding: 100px 80px;           /* more balanced vertical spacing */
+  margin: 0;
+  border: none;
+  box-shadow: none;
+}
+
+.agriconnect-hero-content {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.agriconnect-description h2 {
+  color: #67f09c;
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 18px;
+}
+
+.agriconnect-description p {
+  color: #d8efe2;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  max-width: 800px;
+}
+
+.agriconnect-feature-cards {
+  display: flex;                    /* horizontal layout */
+  justify-content: center;          /* center all cards horizontally */
+  align-items: stretch;             /* make them same height */
+  gap: 30px;                        /* even space between cards */
+  flex-wrap: nowrap;                /* 🔥 keep all cards on one line */
+  margin-top: 60px;
+}
+
+.feature-card {
+  flex: 1 1 300px;                  /* responsive width, but same proportion */
+  max-width: 320px;                 /* keep uniform size */
+  background: #0f241d;
+  border: 1px solid rgba(103, 240, 156, 0.15);
+  border-radius: 16px;
+  padding: 28px 22px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 30px rgba(103, 240, 156, 0.3);
+}
+
+.feature-card h3 {
+  color: #67f09c;
+  font-size: 1.2rem;
+  margin: 14px 0 10px;
+}
+
+.feature-card p {
+  color: #b9d8c6;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.feature-icon {
+  font-size: 2rem;
+  margin-bottom: 12px;
+}
+
+/* .agriconnect-hero {
   width: 100%;
   background: linear-gradient(180deg, #00281f 0%, #041b16 100%);
   color: #e0f6e8;
@@ -1695,7 +1715,7 @@ gmp-place-details-compact {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
   position: relative;
   z-index: 2;
-}
+} */
 
 /* Push main content below hero */
 .app-layout {
@@ -1711,16 +1731,6 @@ gmp-place-details-compact {
 }
 
 /* Left half: form panel */
-/* .form-panel {
-  width: 50%;
-  height: 100%;
-  background: #0a1913;
-  border-right: 1px solid #123126;
-  overflow-y: auto;
-  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.3);
-  position: relative;
-  z-index: 2;
-} */
 
 .form-panel {
   width: 50%;
@@ -2043,20 +2053,22 @@ gmp-place-details-compact {
 }
 
 .use-location-btn {
-  display: flex;                      /* centers text inside button */
+  display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 16px;                   /* space above button */
+  margin-top: 16px;
   background: linear-gradient(135deg, var(--agricultural-green) 0%, var(--agricultural-light-green) 100%);
   border: none;
   border-radius: 10px;
   color: white;
-  padding: 10px 24px;
+  height: 44px;                 /* fixed height for perfect vertical centering */
+  padding: 0 24px;              /* horizontal padding only */
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(74, 124, 89, 0.3);
   transition: all 0.3s ease;
+  line-height: 4.5px;            /* ensures text sits exactly in vertical middle */
 }
 
 .use-location-btn:hover {
@@ -2069,3 +2081,4 @@ gmp-place-details-compact {
   transform: translateY(1px);
   box-shadow: 0 2px 8px rgba(74, 124, 89, 0.25);
 }
+
