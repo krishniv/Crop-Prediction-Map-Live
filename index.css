@@ -1867,28 +1867,52 @@ gmp-place-details-compact {
 }
 
 /* Title */
-.recommendations-card h3 {
+/* .recommendations-card h3 {
   color: #67f09c;
   font-size: 1.3rem;
   font-weight: 600;
   margin-bottom: 12px;
   border-bottom: 1px solid rgba(103, 240, 156, 0.3);
   padding-bottom: 8px;
+} */
+.recommendations-card h3 {
+  color: #8b0000; /* dark red */
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(139, 0, 0, 0.3);
+  padding-bottom: 8px;
 }
 
-/* Markdown text styling */
+/* Markdown text styling
 .recommendation-content {
   color: #e0f6e8;
   font-size: 0.95rem;
   line-height: 1.6;
+} */
+/* Markdown text styling */
+.recommendation-content {
+  color: #7a0a0a; /* slightly softer dark red for body */
+  font-size: 0.95rem;
+  line-height: 1.6;
 }
 
-.recommendation-content strong {
+
+/* .recommendation-content strong {
   color: #a3ffcf;
+} */
+/* Bold text (strong emphasis) */
+.recommendation-content strong {
+  color: #8b0000; /* strong red for emphasized sections */
+  font-weight: 700;
 }
 
-.recommendation-content em {
+/* .recommendation-content em {
   color: #b5e9d3;
+} */
+/* Italic text (emphasis) */
+.recommendation-content em {
+  color: #a52a2a; /* brownish-red for subtle emphasis */
 }
 
 /* Optional: add scroll behavior if output is long */
