@@ -2041,3 +2041,31 @@ gmp-place-details-compact {
   from { transform: translateY(25px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
+
+.use-location-btn {
+  display: flex;                      /* centers text inside button */
+  justify-content: center;
+  align-items: center;
+  margin-top: 16px;                   /* space above button */
+  background: linear-gradient(135deg, var(--agricultural-green) 0%, var(--agricultural-light-green) 100%);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  padding: 10px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(74, 124, 89, 0.3);
+  transition: all 0.3s ease;
+}
+
+.use-location-btn:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, var(--agricultural-light-green) 0%, var(--agricultural-green) 100%);
+  box-shadow: 0 6px 14px rgba(103, 240, 156, 0.4);
+}
+
+.use-location-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(74, 124, 89, 0.25);
+}

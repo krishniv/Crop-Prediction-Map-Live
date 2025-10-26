@@ -401,6 +401,36 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
     }));
   };
 
+  const getCurrentLocation = () => {
+  if (!navigator.geolocation) {
+    alert("Geolocation is not supported by your browser.");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const { latitude, longitude } = position.coords;
+      handleInputChange('latitude', latitude);
+      handleInputChange('longitude', longitude);
+    },
+    (error) => {
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          alert("Please allow location access to use this feature.");
+          break;
+        case error.POSITION_UNAVAILABLE:
+          alert("Location information is unavailable.");
+          break;
+        case error.TIMEOUT:
+          alert("Request timed out. Try again.");
+          break;
+        default:
+          alert("Unable to fetch location.");
+      }
+    }
+  );
+};
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
@@ -541,7 +571,18 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
                 />
               </div>
             </div>
-          </div>
+            {/* ✅ Use Current Location Button */}
+  <button
+    type="button"
+    className="use-location-btn"
+    onClick={getCurrentLocation}
+  >
+    <br />
+    Use Current Location
+    <br />
+  </button>
+</div>
+          {/* </div> */}
 
           {/* Required Parameters */}
           {/* <div className="form-section">
