@@ -191,16 +191,16 @@ graph TD
 ## 📸 Screenshots
 
 ### Main Dashboard
-![Main Dashboard](images\mai_portal.png)
+![Main Dashboard](images/mai_portal.png)
 
 ### Soil Analysis Interface
-![Soil Analysis](images\soil_analysis_portal.png)
+![Soil Analysis](images/soil_analysis_portal.png)
 
 ### 3D Map with Farm Overlay
-![3D Map](images\3dmap.jpeg)
+![3D Map](images/3dmap.jpeg)
 
 ### Crop Recommendations
-![Crop Recommendations](images\recommedation.png)
+![Crop Recommendations](images/recommedation.png)
 
 ## 🔮 Future Roadmap
 
