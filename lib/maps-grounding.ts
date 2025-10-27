@@ -1,234 +1,196 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
-*/
+ */
 
 /**
-* @license
-* SPDX-License-Identifier: Apache-2.0
-*/
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-
+import axios from 'axios';
 import { GoogleGenAI, GenerateContentResponse } from '@google/genai';
 import { useMapStore } from '@/lib/state';
-import {AGRICULTURAL_AGENT_PROMPT}  from './constants.ts';
-// TODO - replace with appropriate key
-// const API_KEY = process.env.GEMINI_API_KEY
+import { AGRICULTURAL_AGENT_PROMPT } from './constants.ts';
+
+// ----------------------
+// API Key
+// ----------------------
 const API_KEY = process.env.API_KEY as string;
 
-// Agricultural parameters interface
+const MAP_KEY = process.env.MAPS_API_KEY as string;
+// ----------------------
+// Interface Definitions
+// ----------------------
+
 export interface AgriculturalParameters {
-  // Required parameters (5)
   latitude: number;
   longitude: number;
   soilType: 'clay' | 'sandy' | 'loamy' | 'silt' | 'peat';
   climate: 'tropical' | 'arid' | 'temperate' | 'continental' | 'polar';
   season: 'spring' | 'summer' | 'fall' | 'winter';
-  
-  // Optional parameters (5)
-  rainfall?: number; // Annual rainfall in mm
-  temperature?: number; // Average temperature in °C
+  rainfall?: number;
+  temperature?: number;
   irrigationAvailable?: boolean;
-  farmSize?: number; // Farm size in hectares
+  farmSize?: number;
   multiCrop?: string;
 }
 
-const AGRICULTURAL_SYS_INSTRUCTIONS = AGRICULTURAL_AGENT_PROMPT
-/**
- * Helper function to automatically zoom the map to a specific location
- * @param latitude - The latitude coordinate
- * @param longitude - The longitude coordinate
- */
+const AGRICULTURAL_SYS_INSTRUCTIONS = AGRICULTURAL_AGENT_PROMPT;
+
+// ----------------------
+// Map Zoom Helper
+// ----------------------
+
 function zoomToLocation(latitude: number, longitude: number): void {
   const { setCameraTarget, setPreventAutoFrame } = useMapStore.getState();
-  
-  // Set camera target for field-level view
+
   setCameraTarget({
-    center: { 
-      lat: latitude, 
-      lng: longitude, 
-      altitude: 750 // 750m altitude for good field detail
-    },
-    range: 2500, // 2.5km range for field-level view
-    tilt: 50, // 50° tilt for better terrain view
+    center: { lat: latitude, lng: longitude, altitude: 750 },
+    range: 2500,
+    tilt: 50,
     heading: 0,
     roll: 0,
   });
-  
-  // Prevent auto-framing to maintain our specific zoom level
+
   setPreventAutoFrame(true);
 }
 
-/**
-* Calls the Gemini API with the googleSearch tool to get a grounded response.
-* @param prompt The user's text prompt.
-* @returns An object containing the model's text response and grounding sources.
-*/
+// ----------------------
+// SDK-based Call
+// ----------------------
+
 export async function fetchMapsGroundedResponseSDK({
- prompt,
- enableWidget = true,
- lat,
- lng,
- systemInstruction,
+  prompt,
+  enableWidget = true,
+  lat,
+  lng,
+  systemInstruction,
 }: {
- prompt: string;
- enableWidget?: boolean;
- lat?: number;
- lng?: number;
- systemInstruction?: string;
+  prompt: string;
+  enableWidget?: boolean;
+  lat?: number;
+  lng?: number;
+  systemInstruction?: string;
 }): Promise<GenerateContentResponse> {
- if (!API_KEY) {
-   throw new Error('Missing required environment variable: API_KEY');
- }
+  if (!API_KEY) throw new Error('Missing required environment variable: API_KEY');
 
+  try {
+    const ai = new GoogleGenAI({ apiKey: API_KEY });
 
- try {
-   const ai = new GoogleGenAI({apiKey: API_KEY});
+    const request: any = {
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        tools: [{ googleMaps: {} }],
+        thinkingConfig: { thinkingBudget: 0 },
+        systemInstruction: systemInstruction || AGRICULTURAL_SYS_INSTRUCTIONS,
+      },
+    };
 
-
-   const request: any = {
-     model: 'gemini-2.5-flash',
-     contents: prompt,
-     config: {
-       tools: [{googleMaps: {}}],
-       thinkingConfig: {
-         thinkingBudget: 0,
-       },
-       systemInstruction: systemInstruction || AGRICULTURAL_SYS_INSTRUCTIONS,
-     },
-   };
-
-
-   if (lat !== undefined && lng !== undefined) {
-     request.toolConfig = {
-       retrievalConfig: {
-         latLng: {
-           latitude: lat,
-           longitude: lng,
-         },
-       },
-     };
-   }
-
-
-   const response = await ai.models.generateContent(request);
-   return (response);
- } catch (error) {
-   console.error(`Error calling Google Search grounding: ${error}
-   With prompt: ${prompt}`);
-   // Re-throw the error to be handled by the caller
-   throw error;
- }
-}
-
-
-/**
-* Calls the Google AI Platform REST API to get a Maps-grounded response.
-* @param options The request parameters.
-* @returns A promise that resolves to the API's GenerateContentResponse.
-*/
-export async function fetchMapsGroundedResponseREST({
- prompt,
- enableWidget = true,
- lat,
- lng,
- systemInstruction,
-}: {
- prompt: string;
- enableWidget?: boolean;
- lat?: number;
- lng?: number;
- systemInstruction?: string;
-}): Promise<GenerateContentResponse> {
- if (!API_KEY) {
-   throw new Error('Missing required environment variable: API_KEY');
- }
- const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
-
-const requestBody: any = {
-   contents: [
-     {
-       parts: [
-         {
-           text: prompt,
-         },
-       ],
-     },
-   ],
-   system_instruction: {
-       parts: [ { text: systemInstruction || AGRICULTURAL_SYS_INSTRUCTIONS } ]
-   },
-   tools: [
-     {
-       google_maps: {
-        enable_widget: enableWidget
-       },
-     },
-   ],
-   generationConfig: {
-      thinkingConfig: {
-        thinkingBudget: 0
-      }
+    if (lat !== undefined && lng !== undefined) {
+      request.toolConfig = {
+        retrievalConfig: { latLng: { latitude: lat, longitude: lng } },
+      };
     }
- };
 
-
- if (lat !== undefined && lng !== undefined) {
-   requestBody.toolConfig = {
-     retrievalConfig: {
-       latLng: {
-         latitude: lat,
-         longitude: lng,
-       },
-     },
-   };
- }
-
-
- try {
-  //  console.log(`endpoint: ${endpoint}\nbody: ${JSON.stringify(requestBody, null, 2)}`)
-   const response = await fetch(endpoint, {
-     method: 'POST',
-     headers: {
-       'Content-Type': 'application/json',
-       'x-goog-api-key': API_KEY,
-     },
-     body: JSON.stringify(requestBody),
-   });
-
-
-   if (!response.ok) {
-     const errorBody = await response.text();
-     console.error('Error from Generative Language API:', errorBody);
-     throw new Error(
-       `API request failed with status ${response.status}: ${errorBody}`,
-     );
-   }
-
-
-   const data = await response.json();
-   return data as GenerateContentResponse;
- } catch (error) {
-   console.error(`Error calling Maps grounding REST API: ${error}`);
-   throw error;
- }
+    const response = await ai.models.generateContent(request);
+    return response;
+  } catch (error) {
+    console.error(`Error calling Google Search grounding: ${error}\nWith prompt: ${prompt}`);
+    throw error;
+  }
 }
 
-/**
-* Calls the Google AI Platform REST API to get agricultural recommendations.
-* @param params The agricultural parameters and location data.
-* @returns A promise that resolves to the API's GenerateContentResponse.
-*/
-export async function fetchAgriculturalRecommendations(
- params: AgriculturalParameters
-): Promise<GenerateContentResponse> {
- if (!API_KEY) {
-   throw new Error('Missing required environment variable: API_KEY');
- }
- const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
+// ----------------------
+// REST-based Call
+// ----------------------
 
- // Construct agricultural prompt with all parameters
-const agriculturalPrompt = `Location: ${params.latitude}, ${params.longitude}
+export async function fetchMapsGroundedResponseREST({
+  prompt,
+  enableWidget = true,
+  lat,
+  lng,
+  systemInstruction,
+}: {
+  prompt: string;
+  enableWidget?: boolean;
+  lat?: number;
+  lng?: number;
+  systemInstruction?: string;
+}): Promise<GenerateContentResponse> {
+  if (!API_KEY) throw new Error('Missing required environment variable: API_KEY');
+
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
+
+  const requestBody: any = {
+    contents: [{ parts: [{ text: prompt }] }],
+    system_instruction: {
+      parts: [{ text: systemInstruction || AGRICULTURAL_SYS_INSTRUCTIONS }],
+    },
+    tools: [{ google_maps: { enable_widget: enableWidget } }],
+    generationConfig: { thinkingConfig: { thinkingBudget: 0 } },
+  };
+
+  if (lat !== undefined && lng !== undefined) {
+    requestBody.toolConfig = {
+      retrievalConfig: { latLng: { latitude: lat, longitude: lng } },
+    };
+  }
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': API_KEY,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error('Error from Generative Language API:', errorBody);
+      throw new Error(`API request failed with status ${response.status}: ${errorBody}`);
+    }
+
+    const data = await response.json();
+    return data as GenerateContentResponse;
+  } catch (error) {
+    console.error(`Error calling Maps grounding REST API: ${error}`);
+    throw error;
+  }
+}
+
+// ----------------------
+// Agricultural API Call
+// ----------------------
+
+export async function fetchAgriculturalRecommendations(
+  params: AgriculturalParameters,
+): Promise<GenerateContentResponse> {
+  if (!API_KEY) throw new Error('Missing required environment variable: API_KEY');
+
+  // ------------------------
+  // Validate coordinates using Maps API
+  // ------------------------
+  const invalidMsg = await isInvalidAgriculturalLocation(params.latitude, params.longitude, MAP_KEY);
+  if (invalidMsg) {
+    return {
+      candidates: [
+        {
+          content: {
+            parts: [{ text: invalidMsg }],
+          },
+        },
+      ],
+    } as GenerateContentResponse;
+  }
+
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
+
+  // Build prompt text
+  const agriculturalPrompt = `Location: ${params.latitude}, ${params.longitude}
 Soil Type: ${params.soilType}
 Climate: ${params.climate}
 Season: ${params.season}
@@ -238,108 +200,96 @@ ${params.irrigationAvailable !== undefined ? `Irrigation Available: ${params.irr
 ${params.farmSize ? `Farm Size: ${params.farmSize} hectares` : ''}
 ${params.multiCrop ? `Multi Crop: ${params.multiCrop}` : ''}`;
 
-const requestBody: any = {
-   contents: [
-     {
-       parts: [
-         {
-           text: agriculturalPrompt,
-         },
-       ],
-     },
-   ],
-   system_instruction: {
-       parts: [ { text: AGRICULTURAL_SYS_INSTRUCTIONS } ]
-   },
-   tools: [
-     {
-       google_maps: {
-        enable_widget: true
-       },
-     },
-   ],
-   generationConfig: {
-      thinkingConfig: {
-        thinkingBudget: 0
-      }
+  const requestBody: any = {
+    contents: [{ parts: [{ text: agriculturalPrompt }] }],
+    system_instruction: { parts: [{ text: AGRICULTURAL_SYS_INSTRUCTIONS }] },
+    tools: [{ google_maps: { enable_widget: true } }],
+    generationConfig: { thinkingConfig: { thinkingBudget: 0 } },
+    toolConfig: {
+      retrievalConfig: {
+        latLng: { latitude: params.latitude, longitude: params.longitude },
+      },
+    },
+  };
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': API_KEY,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    console.log('Agricultural Recommendations API call req:', requestBody);
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error('Error from Generative Language API:', errorBody);
+      throw new Error(`API request failed with status ${response.status}: ${errorBody}`);
     }
- };
 
+    const data = await response.json();
 
- // Add location context for Maps grounding
-requestBody.toolConfig = {
-   retrievalConfig: {
-     latLng: {
-       latitude: params.latitude,
-       longitude: params.longitude,
-     },
-   },
- };
+    zoomToLocation(params.latitude, params.longitude);
+    console.log('Agricultural Recommendations Response:', data);
 
-
- try {
-  
-  //  console.log(`endpoint: ${endpoint}\nbody: ${JSON.stringify(requestBody, null, 2)}`)
-   const response = await fetch(endpoint, {
-     method: 'POST',
-     headers: {
-       'Content-Type': 'application/json',
-       'x-goog-api-key': API_KEY,
-     },
-     
-     body: JSON.stringify(requestBody),
-   });
-
-   console.log('Agricultural Recommendations API call req :', requestBody);
-
-
-   if (!response.ok) {
-     const errorBody = await response.text();
-     console.error('Error from Generative Language API:', errorBody);
-     throw new Error(
-       `API request failed with status ${response.status}: ${errorBody}`,
-     );
-   }
-   else{
-    console.log('Agricultural Recommendations API call successful.',response);
-   }
-
-
-   const data = await response.json();
-
-   // Automatically zoom to the location after getting the response
-  zoomToLocation(params.latitude, params.longitude);
-  console.log('Agricultural Recommendations Response:', data); 
-   return data as GenerateContentResponse;
- } catch (error) {
-   console.error(`Error calling Agricultural Recommendations API: ${error}`);
-   throw error;
- }
+    return data as GenerateContentResponse;
+  } catch (error) {
+    console.error(`Error calling Agricultural Recommendations API: ${error}`);
+    throw error;
+  }
 }
 
-function isInvalidAgriculturalLocation(lat: number, lng: number): string | null {
-  // Basic range validation
+// ----------------------
+// Validation Helper
+// ----------------------
+
+/**
+ * Validate if coordinates are in a plausible agricultural region
+ * using Google Maps Geocoding + Elevation API.
+ */
+export async function isInvalidAgriculturalLocation(
+  lat: number,
+  lng: number,
+  apiKey: string,
+): Promise<string | null> {
   if (lat > 90 || lat < -90 || lng > 180 || lng < -180) {
-    return "Invalid coordinates.";
+    return 'Invalid coordinates. Please provide a valid latitude/longitude.';
   }
 
-  // Reject extreme latitudes — not suitable for agriculture
-  if (lat > 60 || lat < -55) {
-    return "The coordinates are in extreme latitudes, likely unsuitable for agriculture.";
+  try {
+    // 1️⃣ Reverse Geocode
+    const geoUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
+    const geoResp = await axios.get(geoUrl);
+    const geoData = geoResp.data;
+    if (!geoData.results || geoData.results.length === 0) {
+      return 'The coordinates appear to be in a remote or non-land area';
+    }
+
+    const result = geoData.results[0];
+    const types = result.types || [];
+
+    // 2️⃣ Non-agricultural surface check
+    if (types.includes('natural_feature') || types.includes('establishment')) {
+      return 'The coordinates correspond to a non-agricultural feature or built-up area.';
+    }
+
+    // 3️⃣ Country-level exclusion
+    const countryComponent = result.address_components.find((c: any) =>
+      c.types.includes('country'),
+    );
+    const country = countryComponent?.long_name;
+    const nonAgriculturalCountries = ['Greenland', 'Antarctica'];
+    if (country && nonAgriculturalCountries.includes(country)) {
+      return `${country} has limited agricultural land. Please verify the coordinates.`;
+    }
+
+    // ✅ All checks passed
+    return null;
+  } catch (error) {
+    console.error('Error validating coordinates:', error);
+    return 'Unable to verify the coordinates at this time.';
   }
-
-  // Rough bounding boxes for known non-agricultural regions (oceans/deserts)
-  const oceanicZones = [
-    { minLat: -60, maxLat: 60, minLng: -180, maxLng: 180 }, // global ocean fallback
-  ];
-
-  // For example — quick rejects for mid-ocean coordinates
-  if (
-    (Math.abs(lat) < 60 && Math.abs(lng) > 120) || // mid-Pacific
-    (lat < -40 && lng > 40 && lng < 180) // Southern Ocean region
-  ) {
-    return "These coordinates fall over an ocean or non-arable region.";
-  }
-
-  return null; // valid agricultural region
 }
