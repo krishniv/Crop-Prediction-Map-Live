@@ -207,54 +207,67 @@ function AppComponent() {
     >
       <ErrorScreen />
       <Sidebar />
-        {currentPage === 'soil-analyzer' && (
-          <SoilAnalyzerPage 
-            onBack={() => setCurrentPage('map')} 
-          />
-        )}
+      
+      {/* CropYield Pro Header - Always visible */}
+      <header className="cropyield-header">
+        <div className="header-left">
+          <div className="header-logo">
+            <svg className="logo-icon" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+              <g clipPath="url(#clip0_6_319)">
+                <path d="M8.57829 8.57829C5.52816 11.6284 3.451 15.5145 2.60947 19.7452C1.76794 23.9758 2.19984 28.361 3.85056 32.3462C5.50128 36.3314 8.29667 39.7376 11.8832 42.134C15.4698 44.5305 19.6865 45.8096 24 45.8096C28.3135 45.8096 32.5302 44.5305 36.1168 42.134C39.7033 39.7375 42.4987 36.3314 44.1494 32.3462C45.8002 28.361 46.2321 23.9758 45.3905 19.7452C44.549 15.5145 42.4718 11.6284 39.4217 8.57829L24 24L8.57829 8.57829Z" fill="currentColor"></path>
+              </g>
+              <defs>
+                <clipPath id="clip0_6_319"><rect fill="white" height="48" width="48"></rect></clipPath>
+              </defs>
+            </svg>
+          </div>
+          <h2 className="header-title">CropYield Pro</h2>
+        </div>
+        
+        <div className="header-nav">
+          <a 
+            className={`nav-link ${currentPage === 'map' ? 'active' : ''}`} 
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              setCurrentPage('map');
+            }}
+          >
+            Dashboard
+          </a>
+          <a 
+            className="nav-link" 
+            href="/news.html"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            News
+          </a>
+          <a 
+            className={`nav-link ${currentPage !== 'map' ? 'active' : ''}`}
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              setCurrentPage('soil-analyzer');
+            }}
+          >
+            Soil Analyzer
+          </a>
+        </div>
 
-      {currentPage === 'map' && (
-        <>
-          {/* 🌾 AgriConnect Header with Sign In */}
-          <header className="agriconnect-header">
-            <div className="header-left">
-              <h1 className="brand-title">🌾 AgriConnect</h1>
-              <p className="brand-subtitle">Smart Crop Recommendations</p>
-            </div>
-            
-            <div className="header-right">
-              <button
-                className="news-button"
-                onClick={() => window.open('/news.html', '_blank')}
-                >
-                🗞️ Farm-o-Buzz
-              </button>
+        <div className="header-right">
+          <button className="header-icon-btn">
+            <span className="material-symbols-outlined">notifications</span>
+            <span className="notification-badge"></span>
+          </button>
+          <div className="user-avatar" style={{backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuB-rO6cA-OSMD-zVG9BlKQw2WMGotPDu-nf1txIwxxFyN3imDO_gITMJvxHYD4KCmF81lOHbCHtn14bgHheGsYWrf4QNxlwWp1qZEFM8W3ZpAzkyw3QaxweHlgUPiO4PDC1b6alLddRKIZwaVwjGX-JZ5V5ZzbF1VNnscl7T5S6uC-abkkuE0uK7YRcfvBkcBswh0tzsPd8k1k3sgc9Nmt3VHn_26OTojvvO8OBUR3ET_9MH_FaHn8xlgrTXzJZElEIx-bn9Qi56qjb")'}}></div>
+        </div>
+      </header>
 
-              <SoilAnalyzerButton onClick={() => setCurrentPage('soil-analyzer')} />
-
-              {farmer ? (
-                <div className="farmer-info">
-                  <span className="farmer-icon">👨‍🌾</span>
-                  <span className="farmer-name">
-                    Welcome,&nbsp;
-                    {farmer.charAt(0).toUpperCase() + farmer.slice(1)}
-                  </span>
-                  <button className="signout-btn" onClick={handleLogout}>
-                    Log Out
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  className="signin-button"
-                  onClick={() => setShowSignIn(true)}
-                >
-                  👨‍🌾 Sign In / Sign Up
-                </button>
-              )}
-            </div>
-          </header>
-        </>
+      {currentPage === 'soil-analyzer' && (
+        <SoilAnalyzerPage 
+          onBack={() => setCurrentPage('map')} 
+        />
       )}
 
       {/* 🔐 Modal */}
@@ -280,59 +293,136 @@ function AppComponent() {
         </div>
       )}
 
-      {/* ✅ FULL-WIDTH INTRO MOVED ABOVE THE SPLIT LAYOUT */}
-      <section className="agriconnect-hero">
-        <div className="agriconnect-hero-content">
+     
 
-          <div className="agriconnect-description">
-            <h2>About AgriConnect Platform</h2>
-            <p>
-              AgriConnect uses advanced AI algorithms and environmental data to provide personalized crop
-              recommendations for your farm. Our system analyzes your location, soil type, climate
-              conditions, and seasonal patterns to suggest the most suitable crops for optimal yield.
-              
-            </p>
-          </div>
-
-          <div className="agriconnect-feature-cards">
-            <div className="feature-card">
-              <div className="feature-icon">🌿</div>
-              <h3>Smart Analysis</h3>
-              <p>Data-driven insights for better farming decisions based on real-time environmental factors.</p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">📈</div>
-              <h3>Maximize Yield</h3>
-              <p>Optimize your harvest with tailored recommendations that suit your specific farm conditions.</p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">🌦️</div>
-              <h3>Climate Aware</h3>
-              <p>Recommendations based on local weather patterns and seasonal climate variations.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ✅ ORIGINAL SPLIT LAYOUT BELOW */}
-      <div className="app-layout">
+      {/* 3-Column Layout */}
+      <div className="app-layout-three-col">
         {currentPage === 'map' && (
-          <div className="form-panel">
-            <AgriculturalForm />
-            {/* <div className="control-panel" ref={consolePanelRef}>
-              <ControlTray trayRef={controlTrayRef} />
-            </div> */}
-          </div>
-        )}
+          <>
+            {/* Mobile Toggle for Sidebar */}
+            <input className="sidebar-toggle" type="checkbox" id="filters-toggle" />
+            <label className="sidebar-toggle-label" htmlFor="filters-toggle">
+              <span className="material-symbols-outlined">menu_open</span>
+            </label>
+            <label className="sidebar-overlay" htmlFor="filters-toggle"></label>
 
-        {currentPage === 'map' && (
-          <div className="map-panel">
-            <Map3D
-              ref={element => setMap(element ?? null)}
-              onCameraChange={handleCameraChange}
-              {...viewProps}
-            />
-          </div>
+            {/* Left Sidebar - Input Farm Details */}
+            <aside className="left-sidebar">
+              <div className="sidebar-header-mobile">
+                <h1 className="sidebar-title">Input Farm Details</h1>
+                <label className="sidebar-close" htmlFor="filters-toggle">
+                  <span className="material-symbols-outlined">close</span>
+                </label>
+              </div>
+              <AgriculturalForm />
+            </aside>
+
+            {/* Center - Map */}
+            <main className="map-container">
+              <div className="map-panel">
+                <Map3D
+                  ref={element => setMap(element ?? null)}
+                  onCameraChange={handleCameraChange}
+                  {...viewProps}
+                />
+                {/* Map Controls */}
+                <div className="map-controls">
+                  <button className="map-control-btn">
+                    <span className="material-symbols-outlined">add</span>
+                  </button>
+                  <button className="map-control-btn">
+                    <span className="material-symbols-outlined">remove</span>
+                  </button>
+                  <button className="map-control-btn">
+                    <span className="material-symbols-outlined">layers</span>
+                  </button>
+                </div>
+                {/* Analysis Status Overlay */}
+             
+              </div>
+            </main>
+
+            {/* Right Sidebar - Prediction Summary */}
+            <aside className="right-sidebar">
+              <div className="prediction-summary">
+                <h1 className="summary-title">
+                  <span className="material-symbols-outlined">analytics</span>
+                  Prediction Summary
+                </h1>
+                
+                <div className="summary-cards">
+                  <div className="summary-card">
+                    <p className="card-label">Recommended Crop</p>
+                    <p className="card-value">Wheat</p>
+                    <div className="card-badge high-yield">High Yield</div>
+                  </div>
+                  
+                  <div className="summary-card">
+                    <p className="card-label">Est. Yield</p>
+                    <p className="card-value">4.2 <span className="card-unit">tons/ha</span></p>
+                    <div className="card-badge positive">+12% vs Avg</div>
+                  </div>
+                  
+                  <div className="summary-card confidence-card">
+                    <p className="card-label">Confidence Score</p>
+                    <div className="confidence-content">
+                      <p className="confidence-value">94%</p>
+                      <span className="material-symbols-outlined confidence-icon">verified</span>
+                    </div>
+                    <div className="confidence-bar">
+                      <div className="confidence-fill" style={{width: '94%'}}></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="soil-data-section">
+                  <div className="soil-data-header">
+                    <h2>Regional Soil Data</h2>
+                    <button className="view-report-btn">View Full Report</button>
+                  </div>
+                  
+                  <div className="soil-data-table">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Parameter</th>
+                          <th>Value</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>Nitrogen (N)</td>
+                          <td>140 mg/kg</td>
+                          <td><span className="status-badge optimal">OPTIMAL</span></td>
+                        </tr>
+                        <tr>
+                          <td>Phosphorus (P)</td>
+                          <td>22 mg/kg</td>
+                          <td><span className="status-badge low">LOW</span></td>
+                        </tr>
+                        <tr>
+                          <td>Potassium (K)</td>
+                          <td>180 mg/kg</td>
+                          <td><span className="status-badge good">GOOD</span></td>
+                        </tr>
+                        <tr>
+                          <td>pH Level</td>
+                          <td>6.5</td>
+                          <td><span className="status-badge neutral">NEUTRAL</span></td>
+                        </tr>
+                        <tr>
+                          <td>Moisture</td>
+                          <td>28%</td>
+                          <td><span className="status-badge adequate">ADEQUATE</span></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          </>
         )}
       </div>
     </LiveAPIProvider>
