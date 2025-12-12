@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './NewsPage.css';
 
 interface NewsPageProps {
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 interface NewsItem {

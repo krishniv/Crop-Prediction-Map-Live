@@ -432,15 +432,11 @@ function AppComponent() {
       </header>
 
       {currentPage === 'soil-analyzer' && (
-        <SoilAnalyzerPage 
-          onBack={() => setCurrentPage('map')} 
-        />
+        <SoilAnalyzerPage />
       )}
 
       {currentPage === 'news' && (
-        <NewsPage 
-          onBack={() => setCurrentPage('map')} 
-        />
+        <NewsPage />
       )}
 
       {/* 🔐 Modal */}
@@ -523,51 +519,13 @@ function AppComponent() {
                   Prediction Summary
                 </h1>
                 
-                <div className="summary-cards">
-                  {recommendations ? (() => {
-                    // Try to parse JSON to get first crop for summary card
-                    let parsed: any = null;
-                    try {
-                      parsed = JSON.parse(recommendations);
-                    } catch (e) {
-                      const fenceMatch = recommendations.match(/```(?:json\n)?([\s\S]*?)```/i);
-                      if (fenceMatch && fenceMatch[1]) {
-                        try {
-                          parsed = JSON.parse(fenceMatch[1].trim());
-                        } catch (e2) {}
-                      }
-                    }
-                    const firstCrop = parsed && Array.isArray(parsed.recommended_crops) && parsed.recommended_crops.length > 0 
-                      ? parsed.recommended_crops[0] 
-                      : null;
-                    
-                    return firstCrop ? (
-                      <div className="summary-card">
-                        <p className="card-label">Recommendations</p>
-                        <p className="card-value">{firstCrop.crop_name || 'N/A'}</p>
-                        {firstCrop.percentage_area_allocation && (
-                          <div className="card-badge high-yield">{firstCrop.percentage_area_allocation}</div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="summary-card">
-                        <p className="card-label">Recommendations</p>
-                        <p className="card-value">Available</p>
-                        <div className="card-badge high-yield">See details below</div>
-                      </div>
-                    );
-                  })() : (
-                    <div className="summary-card">
-                      <p className="card-label">Recommendations</p>
-                      <p className="card-value">-</p>
-                      <div className="card-badge">No data</div>
-                    </div>
-                  )}
-                </div>
-
-                {recommendations && (
-                  <div className="recommendations-details" style={{ marginTop: '20px', padding: '16px', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
+                {recommendations ? (
+                  <div className="recommendations-details">
                     <FormattedRecommendations text={recommendations} />
+                  </div>
+                ) : (
+                  <div className="no-recommendations">
+                    <p>No recommendations available. Submit the form to get crop recommendations.</p>
                   </div>
                 )}
 

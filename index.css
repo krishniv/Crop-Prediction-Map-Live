@@ -2726,6 +2726,33 @@ html {
   flex-direction: column;
   gap: 24px;
   height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.prediction-summary::-webkit-scrollbar {
+  width: 8px;
+}
+
+.prediction-summary::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.prediction-summary::-webkit-scrollbar-thumb {
+  background: rgba(19, 236, 91, 0.3);
+  border-radius: 4px;
+}
+
+.prediction-summary::-webkit-scrollbar-thumb:hover {
+  background: rgba(19, 236, 91, 0.5);
+}
+
+.dark .prediction-summary::-webkit-scrollbar-thumb {
+  background: rgba(19, 236, 91, 0.4);
+}
+
+.dark .prediction-summary::-webkit-scrollbar-thumb:hover {
+  background: rgba(19, 236, 91, 0.6);
 }
 
 .summary-title {
@@ -2861,6 +2888,309 @@ html {
   height: 100%;
   border-radius: 9999px;
   transition: width 0.3s ease;
+}
+
+/* Recommendations Details */
+.recommendations-details {
+  margin-top: 0;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.dark .recommendations-details {
+  background: var(--card-dark);
+  border-color: var(--border-dark);
+}
+
+.no-recommendations {
+  padding: 24px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.dark .no-recommendations {
+  color: #9ca3af;
+}
+
+/* JSON Root and Sections */
+.json-root {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  color: #1f2937;
+  font-family: 'Google Sans Display', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  word-wrap: break-word;
+}
+
+.dark .json-root {
+  color: #e5e7eb;
+}
+
+.json-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.json-section h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary);
+  margin: 0 0 8px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(19, 236, 91, 0.2);
+}
+
+.dark .json-section h4 {
+  border-bottom-color: var(--border-dark);
+}
+
+.json-value {
+  color: #1f2937;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.dark .json-value {
+  color: #e5e7eb;
+}
+
+/* Crop List */
+.crop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.crop-card {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.dark .crop-card {
+  background: var(--input-dark);
+  border-color: var(--border-dark);
+}
+
+.crop-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.crop-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.dark .crop-name {
+  color: #e5e7eb;
+}
+
+.crop-alloc {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--primary);
+  background: rgba(19, 236, 91, 0.1);
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+
+.crop-rationale {
+  color: #6b7280;
+  font-size: 13px;
+  margin: 8px 0 0 0;
+  line-height: 1.5;
+}
+
+.dark .crop-rationale {
+  color: #9ca3af;
+}
+
+/* Key-Value Grid */
+.kv-grid,
+.kv-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kv-row {
+  display: flex;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+  flex-wrap: wrap;
+}
+
+.dark .kv-row {
+  border-bottom-color: var(--border-dark);
+}
+
+.kv-row:last-child {
+  border-bottom: none;
+}
+
+.kv-key {
+  font-weight: 500;
+  color: #6b7280;
+  min-width: 120px;
+  flex-shrink: 0;
+  text-transform: capitalize;
+}
+
+.dark .kv-key {
+  color: #9ca3af;
+}
+
+.kv-key.small {
+  font-size: 12px;
+  min-width: 80px;
+}
+
+.kv-val {
+  flex: 1;
+  min-width: 0;
+  color: #1f2937;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.dark .kv-val {
+  color: #e5e7eb;
+}
+
+.kv-val.small {
+  font-size: 12px;
+}
+
+.sub-kv {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+/* Challenge List */
+.challenge-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.challenge-list li {
+  padding: 12px;
+  background: #f9fafb;
+  border-left: 3px solid var(--primary);
+  border-radius: 4px;
+}
+
+.dark .challenge-list li {
+  background: var(--input-dark);
+}
+
+.challenge-list li strong {
+  display: block;
+  color: var(--primary);
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.challenge-list li .kv-val {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.dark .challenge-list li .kv-val {
+  color: #9ca3af;
+}
+
+/* Responsive styles for recommendations */
+@media (max-width: 1024px) {
+  .recommendations-details {
+    padding: 12px;
+  }
+  
+  .json-root {
+    gap: 16px;
+    font-size: 13px;
+  }
+  
+  .json-section h4 {
+    font-size: 15px;
+  }
+  
+  .crop-card {
+    padding: 10px;
+  }
+  
+  .kv-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .kv-key {
+    min-width: auto;
+    width: 100%;
+  }
+  
+  .kv-val {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .recommendations-details {
+    padding: 10px;
+    border-radius: 8px;
+  }
+  
+  .json-root {
+    gap: 12px;
+    font-size: 12px;
+  }
+  
+  .json-section h4 {
+    font-size: 14px;
+  }
+  
+  .crop-name {
+    font-size: 14px;
+  }
+  
+  .crop-rationale {
+    font-size: 12px;
+  }
+  
+  .kv-key {
+    font-size: 12px;
+  }
+  
+  .kv-val {
+    font-size: 12px;
+  }
 }
 
 .soil-data-section {

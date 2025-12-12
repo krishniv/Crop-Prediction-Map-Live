@@ -31,7 +31,7 @@ Image: Gray clay soil, sticky wet texture.
 Output: Soil Type: Clayey | Nutrients: Rich in iron, potassium, calcium; retains water effectively.`;
 
 interface SoilAnalyzerPageProps {
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 export const SoilAnalyzerPage: React.FC<SoilAnalyzerPageProps> = ({ onBack }) => {
@@ -178,20 +178,6 @@ Please be specific and actionable in your recommendations.`
 
   return (
     <div className="soil-analyzer-page">
-      {/* 🌾 AgriConnect Header */}
-      <header className="agriconnect-header">
-        <div className="header-left">
-          <h1 className="brand-title">🌾 AgriConnect</h1>
-          <p className="brand-subtitle">Smart Crop Recommendations</p>
-        </div>
-        
-        <div className="header-right">
-          <button className="back-button" onClick={onBack}>
-            ← Back to Map
-          </button>
-        </div>
-      </header>
-
       <div className="soil-analyzer-container">
         <div className="soil-analyzer-header">
           <h1 className="page-title">🔬 AI-Powered Soil Analysis</h1>
