@@ -18,6 +18,8 @@
  * limitations under the License.
  */
 import React, {useCallback, useState, useEffect, useRef} from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 import ControlTray from './components/ControlTray';
 import ErrorScreen from './components/ErrorScreen';
@@ -27,11 +29,12 @@ import { LiveAPIProvider } from './contexts/LiveAPIContext';
 // FIX: Correctly import APIProvider as a named export.
 import { APIProvider, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { Map3D, Map3DCameraProps} from './components/map-3d';
-import { useMapStore } from './lib/state';
+import { useMapStore, useAgriculturalStore } from './lib/state';
 import { MapController } from './lib/map-controller';
 
 import { SoilAnalyzerButton } from './components/SoilAnalyzerButton';
 import { SoilAnalyzerPage } from './components/SoilAnalyzerPage';
+import { NewsPage } from './components/NewsPage';
 
 const ApiKeyWarning = ({ currentApiKey }: { currentApiKey: string }) => {
   const [isVisible, setIsVisible] = useState(true);
@@ -76,6 +79,167 @@ const INITIAL_VIEW_PROPS = {
 };
 
 
+// Helper component to format and display recommendations
+function FormattedRecommendations({ text }: { text: string }) {
+  // Try multiple heuristics to recover JSON from the assistant response.
+  const tryParse = (candidate: string) => {
+    try {
+      return JSON.parse(candidate);
+    } catch (e) {
+      return null;
+    }
+  };
+
+  // 1) direct parse
+  let parsed = tryParse(text);
+  if (!parsed) {
+    // 2) strip code fences ```json ... ``` or ``` ... ```
+    const fenceMatch = text.match(/```(?:json\n)?([\s\S]*?)```/i);
+    if (fenceMatch && fenceMatch[1]) {
+      parsed = tryParse(fenceMatch[1].trim());
+    }
+  }
+
+  if (!parsed) {
+    // 3) extract first {...} block
+    const firstOpen = text.indexOf('{');
+    const lastClose = text.lastIndexOf('}');
+    if (firstOpen !== -1 && lastClose !== -1 && lastClose > firstOpen) {
+      const sub = text.slice(firstOpen, lastClose + 1);
+      parsed = tryParse(sub);
+    }
+  }
+
+  if (!parsed) {
+    // 4) Sometimes the assistant returns a JSON string (escaped) inside quotes
+    const trimmed = text.trim();
+    if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+      try {
+        const unquoted = JSON.parse(trimmed);
+        parsed = tryParse(unquoted);
+      } catch (e) {
+        // ignore
+      }
+    }
+  }
+
+  if (parsed) {
+    return <PrettyJson data={parsed} />;
+  }
+
+  // fallback: render markdown/raw text
+  return <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>;
+}
+
+function PrettyJson({ data }: { data: any }) {
+  return (
+    <div className="json-root">
+      {data.location_description && (
+        <section className="json-section">
+          <h4>Location Overview</h4>
+          <p className="json-value">{data.location_description}</p>
+        </section>
+      )}
+
+      {Array.isArray(data.recommended_crops) && data.recommended_crops.length > 0 && (
+        <section className="json-section">
+          <h4>Recommended Crops</h4>
+          <div className="crop-list">
+            {data.recommended_crops.map((c: any, idx: number) => (
+              <article key={idx} className="crop-card">
+                <div className="crop-card-header">
+                  <strong className="crop-name">{c.crop_name}</strong>
+                  {c.percentage_area_allocation && (
+                    <span className="crop-alloc">{c.percentage_area_allocation}</span>
+                  )}
+                </div>
+                {c.rationale && <p className="crop-rationale">{c.rationale}</p>}
+                <div className="kv-grid">
+                  {c.intercropping_options && (
+                    <div className="kv-row">
+                      <div className="kv-key">Intercropping</div>
+                      <div className="kv-val">{c.intercropping_options}</div>
+                    </div>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {data.expected_yield_estimates && (
+        <section className="json-section">
+          <h4>Expected Yield Estimates</h4>
+          <ul className="kv-list">
+            {Object.entries(data.expected_yield_estimates).map(([k, v]) => (
+              <li key={k}>
+                <span className="kv-key">{k.replace(/_/g, ' ')}:</span>{' '}
+                <span className="kv-val">{String(v)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {data.soil_preparation_requirements && (
+        <section className="json-section">
+          <h4>Soil Preparation</h4>
+          <div className="kv-list">
+            {Object.entries(data.soil_preparation_requirements).map(([k, v]) => (
+              <div key={k} className="kv-row">
+                <div className="kv-key">{k.replace(/_/g, ' ')}:</div>
+                <div className="kv-val">{String(v)}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {data.water_and_fertilizer_needs && (
+        <section className="json-section">
+          <h4>Water & Fertilizer</h4>
+          <div className="kv-list">
+            {Object.entries(data.water_and_fertilizer_needs).map(([k, v]) => (
+              <div key={k} className="kv-row">
+                <div className="kv-key">{k.replace(/_/g, ' ')}:</div>
+                <div className="kv-val">
+                  {typeof v === 'object' ? (
+                    <div className="sub-kv">
+                      {Object.entries(v).map(([kk, vv]) => (
+                        <div key={kk} className="kv-row">
+                          <div className="kv-key small">{kk}:</div>
+                          <div className="kv-val small">{String(vv)}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    String(v)
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {Array.isArray(data.potential_challenges_and_mitigation_strategies) && (
+        <section className="json-section">
+          <h4>Potential Challenges & Mitigation</h4>
+          <ol className="challenge-list">
+            {data.potential_challenges_and_mitigation_strategies.map((c: any, i: number) => (
+              <li key={i}>
+                <strong>{c.challenge}</strong>
+                <div className="kv-val">{c.mitigation}</div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+    </div>
+  );
+}
+
 function AppComponent() {
   const [map, setMap] = useState<google.maps.maps3d.Map3DElement | null>(null);
   const placesLib = useMapsLibrary('places');
@@ -83,6 +247,7 @@ function AppComponent() {
   const [geocoder, setGeocoder] = useState<google.maps.Geocoder | null>(null);
   const [viewProps, setViewProps] = useState(INITIAL_VIEW_PROPS);
   const { markers, rectangularOverlays, cameraTarget, setCameraTarget, preventAutoFrame } = useMapStore();
+  const { recommendations } = useAgriculturalStore();
   const mapController = useRef<MapController | null>(null);
   const maps3dLib = useMapsLibrary('maps3d');
   const elevationLib = useMapsLibrary('elevation');
@@ -92,7 +257,7 @@ function AppComponent() {
   /** ---------------- Login state ---------------- **/
   const [showSignIn, setShowSignIn] = useState(false);
   const [farmer, setFarmer] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState<'map' | 'soil-analyzer'>('map');
+  const [currentPage, setCurrentPage] = useState<'map' | 'soil-analyzer' | 'news'>('map');
   
   const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -236,15 +401,17 @@ function AppComponent() {
             Dashboard
           </a>
           <a 
-            className="nav-link" 
-            href="/news.html"
-            target="_blank"
-            rel="noopener noreferrer"
+            className={`nav-link ${currentPage === 'news' ? 'active' : ''}`}
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              setCurrentPage('news');
+            }}
           >
             News
           </a>
           <a 
-            className={`nav-link ${currentPage !== 'map' ? 'active' : ''}`}
+            className={`nav-link ${currentPage === 'soil-analyzer' ? 'active' : ''}`}
             href="#"
             onClick={(e) => {
               e.preventDefault();
@@ -266,6 +433,12 @@ function AppComponent() {
 
       {currentPage === 'soil-analyzer' && (
         <SoilAnalyzerPage 
+          onBack={() => setCurrentPage('map')} 
+        />
+      )}
+
+      {currentPage === 'news' && (
+        <NewsPage 
           onBack={() => setCurrentPage('map')} 
         />
       )}
@@ -351,29 +524,52 @@ function AppComponent() {
                 </h1>
                 
                 <div className="summary-cards">
-                  <div className="summary-card">
-                    <p className="card-label">Recommended Crop</p>
-                    <p className="card-value">Wheat</p>
-                    <div className="card-badge high-yield">High Yield</div>
-                  </div>
-                  
-                  <div className="summary-card">
-                    <p className="card-label">Est. Yield</p>
-                    <p className="card-value">4.2 <span className="card-unit">tons/ha</span></p>
-                    <div className="card-badge positive">+12% vs Avg</div>
-                  </div>
-                  
-                  <div className="summary-card confidence-card">
-                    <p className="card-label">Confidence Score</p>
-                    <div className="confidence-content">
-                      <p className="confidence-value">94%</p>
-                      <span className="material-symbols-outlined confidence-icon">verified</span>
+                  {recommendations ? (() => {
+                    // Try to parse JSON to get first crop for summary card
+                    let parsed: any = null;
+                    try {
+                      parsed = JSON.parse(recommendations);
+                    } catch (e) {
+                      const fenceMatch = recommendations.match(/```(?:json\n)?([\s\S]*?)```/i);
+                      if (fenceMatch && fenceMatch[1]) {
+                        try {
+                          parsed = JSON.parse(fenceMatch[1].trim());
+                        } catch (e2) {}
+                      }
+                    }
+                    const firstCrop = parsed && Array.isArray(parsed.recommended_crops) && parsed.recommended_crops.length > 0 
+                      ? parsed.recommended_crops[0] 
+                      : null;
+                    
+                    return firstCrop ? (
+                      <div className="summary-card">
+                        <p className="card-label">Recommendations</p>
+                        <p className="card-value">{firstCrop.crop_name || 'N/A'}</p>
+                        {firstCrop.percentage_area_allocation && (
+                          <div className="card-badge high-yield">{firstCrop.percentage_area_allocation}</div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="summary-card">
+                        <p className="card-label">Recommendations</p>
+                        <p className="card-value">Available</p>
+                        <div className="card-badge high-yield">See details below</div>
+                      </div>
+                    );
+                  })() : (
+                    <div className="summary-card">
+                      <p className="card-label">Recommendations</p>
+                      <p className="card-value">-</p>
+                      <div className="card-badge">No data</div>
                     </div>
-                    <div className="confidence-bar">
-                      <div className="confidence-fill" style={{width: '94%'}}></div>
-                    </div>
-                  </div>
+                  )}
                 </div>
+
+                {recommendations && (
+                  <div className="recommendations-details" style={{ marginTop: '20px', padding: '16px', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
+                    <FormattedRecommendations text={recommendations} />
+                  </div>
+                )}
 
                 <div className="soil-data-section">
                   <div className="soil-data-header">

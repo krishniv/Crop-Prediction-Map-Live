@@ -21,15 +21,9 @@
  */
 
 // import React, { useState, FormEvent } from 'react';
-import React, { useState, FormEvent, useEffect } from 'react';
+import React, { useState, FormEvent } from 'react';
 import { AgriculturalParameters, fetchAgriculturalRecommendations } from '@/lib/maps-grounding';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-// import './AgriculturalForm.css';
-// import './AgriculturalForm.css';
-import './AgriculturalFormOverlay.css';
-import { createPortal } from 'react-dom';
-import { useMapStore } from '@/lib/state';
+import { useMapStore, useAgriculturalStore } from '@/lib/state';
 import { calculateRectangleCorners, calculateRectangleDimensions } from '@/lib/rectangle-utils';
 
 interface AgriculturalFormProps {
@@ -38,6 +32,7 @@ interface AgriculturalFormProps {
 
 export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
   const { setRectangularOverlays, clearRectangularOverlays } = useMapStore();
+  const { setRecommendations } = useAgriculturalStore();
   
   const [formData, setFormData] = useState<AgriculturalParameters>({
     latitude: 0,
@@ -52,9 +47,7 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
     multiCrop: undefined,
   });
 
-  const [showOptional, setShowOptional] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [response, setResponse] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (field: keyof AgriculturalParameters, value: any) => {
@@ -115,7 +108,6 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
 
     setIsSubmitting(true);
     setError(null);
-    setResponse(null);
 
     try {
       // Clear any existing rectangular overlays
@@ -153,7 +145,7 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
       const result = await fetchAgriculturalRecommendations(formData);
       const responseText =
         result.candidates?.[0]?.content?.parts?.[0]?.text || 'No recommendations available';
-      setResponse(responseText);
+      setRecommendations(responseText);
       if (onSubmit) onSubmit(formData);
     } catch (error) {
       console.error('Error submitting agricultural form:', error);
@@ -163,39 +155,9 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
     }
   };
 
-    // Track the map container element so we can render the response overlay into it
-  const [mapContainer, setMapContainer] = useState<HTMLElement | null>(null);
-
-  useEffect(() => {
-    // Try to find the map panel in the page
-    const el = document.querySelector('.map-panel') as HTMLElement | null;
-    if (el) setMapContainer(el);
-  }, []);
-
-  // If the map panel wasn't present at mount (rare), re-check when response changes.
-  useEffect(() => {
-    if (!mapContainer && response) {
-      const el = document.querySelector('.map-panel') as HTMLElement | null;
-      if (el) setMapContainer(el);
-    }
-  }, [response, mapContainer]);
-
-  const overlayPortal =
-    response && mapContainer
-      ? createPortal(
-          <DraggableResizableOverlay
-            mapContainer={mapContainer}
-            response={response}
-            overlayClassName="map-overlay-recommendations"
-          />,
-          mapContainer
-        )
-      : null;
-
   return (
-    <>
-      <div className="agricultural-form">
-        <form onSubmit={handleSubmit} className="form-content">
+    <div className="agricultural-form">
+      <form onSubmit={handleSubmit} className="form-content">
           {/* Location Section */}
           <div className="form-section">
             <h3>Farm Location</h3>
@@ -419,269 +381,8 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
             )}
           </div>
         </form>
-
-       </div>
-      {overlayPortal}
-    </>
-  );
-}
-
-// Small helper component: draggable & resizable overlay
-function DraggableResizableOverlay({
-  mapContainer,
-  response,
-  overlayClassName,
-}: {
-  mapContainer: HTMLElement;
-  response: string;
-  overlayClassName?: string;
-}) {
-  const overlayRef = React.useRef<HTMLDivElement | null>(null);
-
-  // position in pixels from the top-left of the mapContainer
-  const [pos, setPos] = React.useState<{ left: number; top: number }>(() => ({ left: 20, top: 20 }));
-  const [size, setSize] = React.useState<{ width: number; height: number }>(() => ({ width: 380, height: 320 }));
-  const draggingRef = React.useRef(false);
-  const dragOffsetRef = React.useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-
-  // initialize to bottom-right corner if possible
-  React.useEffect(() => {
-    if (!mapContainer || !overlayRef.current) return;
-    const containerRect = mapContainer.getBoundingClientRect();
-    const initWidth = size.width;
-    const initHeight = size.height;
-    const left = Math.max(12, containerRect.width - initWidth - 20);
-    const top = Math.max(12, containerRect.height - initHeight - 20);
-    setPos({ left, top });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mapContainer]);
-
-  React.useEffect(() => {
-    function onPointerMove(e: PointerEvent) {
-      if (!draggingRef.current) return;
-      e.preventDefault();
-      const mapRect = mapContainer.getBoundingClientRect();
-      const clientX = e.clientX;
-      const clientY = e.clientY;
-      const left = clientX - mapRect.left - dragOffsetRef.current.x;
-      const top = clientY - mapRect.top - dragOffsetRef.current.y;
-      // clamp
-      const clampedLeft = Math.min(Math.max(6, left), Math.max(6, mapRect.width - (overlayRef.current?.offsetWidth || size.width) - 6));
-      const clampedTop = Math.min(Math.max(6, top), Math.max(6, mapRect.height - (overlayRef.current?.offsetHeight || size.height) - 6));
-      setPos({ left: clampedLeft, top: clampedTop });
-    }
-
-    function onPointerUp() {
-      if (draggingRef.current) draggingRef.current = false;
-    }
-
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup', onPointerUp);
-    return () => {
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointerup', onPointerUp);
-    };
-  }, [mapContainer, size.height, size.width]);
-
-  function startDrag(e: React.PointerEvent) {
-    if (!overlayRef.current) return;
-    draggingRef.current = true;
-    overlayRef.current.setPointerCapture(e.pointerId);
-    const mapRect = mapContainer.getBoundingClientRect();
-    const offsetX = e.clientX - mapRect.left - pos.left;
-    const offsetY = e.clientY - mapRect.top - pos.top;
-    dragOffsetRef.current = { x: offsetX, y: offsetY };
-  }
-
-  // After resize (CSS resize), update our state to reflect new width/height
-  function onResizeEnd() {
-    if (!overlayRef.current) return;
-    setSize({ width: overlayRef.current.offsetWidth, height: overlayRef.current.offsetHeight });
-  }
-
-  return (
-    <div
-      ref={overlayRef}
-      className={overlayClassName}
-      role="dialog"
-      aria-live="polite"
-      style={{ position: 'absolute', left: pos.left, top: pos.top, width: size.width, height: size.height }}
-    >
-      <div className="overlay-inner" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <div
-          className="overlay-header"
-          onPointerDown={startDrag}
-          style={{ cursor: 'move', userSelect: 'none', flex: '0 0 auto', paddingBottom: 6 }}
-        >
-          <h3 style={{ margin: 0 }}>🎯 Crop Recommendations</h3>
-        </div>
-
-        <div className="recommendation-content" style={{ overflow: 'auto', flex: '1 1 auto' }} onPointerUp={onResizeEnd}>
-          <FormattedJsonOrMarkdown text={response} />
-        </div>
       </div>
-    </div>
   );
 }
 
-function FormattedJsonOrMarkdown({ text }: { text: string }) {
-  // Try multiple heuristics to recover JSON from the assistant response.
-  const tryParse = (candidate: string) => {
-    try {
-      return JSON.parse(candidate);
-    } catch (e) {
-      return null;
-    }
-  };
-
-  // 1) direct parse
-  let parsed = tryParse(text);
-  if (!parsed) {
-    // 2) strip code fences ```json ... ``` or ``` ... ```
-    const fenceMatch = text.match(/```(?:json\n)?([\s\S]*?)```/i);
-    if (fenceMatch && fenceMatch[1]) {
-      parsed = tryParse(fenceMatch[1].trim());
-    }
-  }
-
-  if (!parsed) {
-    // 3) extract first {...} block
-    const firstOpen = text.indexOf('{');
-    const lastClose = text.lastIndexOf('}');
-    if (firstOpen !== -1 && lastClose !== -1 && lastClose > firstOpen) {
-      const sub = text.slice(firstOpen, lastClose + 1);
-      parsed = tryParse(sub);
-    }
-  }
-
-  if (!parsed) {
-    // 4) Sometimes the assistant returns a JSON string (escaped) inside quotes
-    const trimmed = text.trim();
-    if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
-      try {
-        const unquoted = JSON.parse(trimmed);
-        parsed = tryParse(unquoted);
-      } catch (e) {
-        // ignore
-      }
-    }
-  }
-
-  if (parsed) {
-    return <PrettyJson data={parsed} />;
-  }
-
-  // fallback: render markdown/raw text
-  return <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>;
-}
-
-function PrettyJson({ data }: { data: any }) {
-  // Render top-level sections with nicer layout
-  return (
-    <div className="json-root">
-      {data.location_description && (
-        <section className="json-section">
-          <h4>Location Overview</h4>
-          <p className="json-value">{data.location_description}</p>
-        </section>
-      )}
-
-      {Array.isArray(data.recommended_crops) && (
-        <section className="json-section">
-          <h4>Recommended Crops</h4>
-          <div className="crop-list">
-            {data.recommended_crops.map((c: any, idx: number) => (
-              <article key={idx} className="crop-card">
-                <div className="crop-card-header">
-                  <strong className="crop-name">{c.crop_name}</strong>
-                  {c.percentage_area_allocation && (
-                    <span className="crop-alloc">{c.percentage_area_allocation}</span>
-                  )}
-                </div>
-                {c.rationale && <p className="crop-rationale">{c.rationale}</p>}
-                <div className="kv-grid">
-                  {c.intercropping_options && (
-                    <div className="kv-row">
-                      <div className="kv-key">Intercropping</div>
-                      <div className="kv-val">{c.intercropping_options}</div>
-                    </div>
-                  )}
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {data.expected_yield_estimates && (
-        <section className="json-section">
-          <h4>Expected Yield Estimates</h4>
-          <ul className="kv-list">
-            {Object.entries(data.expected_yield_estimates).map(([k, v]) => (
-              <li key={k}>
-                <span className="kv-key">{k.replace(/_/g, ' ')}:</span>{' '}
-                <span className="kv-val">{String(v)}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {data.soil_preparation_requirements && (
-        <section className="json-section">
-          <h4>Soil Preparation</h4>
-          <div className="kv-list">
-            {Object.entries(data.soil_preparation_requirements).map(([k, v]) => (
-              <div key={k} className="kv-row">
-                <div className="kv-key">{k.replace(/_/g, ' ')}:</div>
-                <div className="kv-val">{String(v)}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {data.water_and_fertilizer_needs && (
-        <section className="json-section">
-          <h4>Water & Fertilizer</h4>
-          <div className="kv-list">
-            {Object.entries(data.water_and_fertilizer_needs).map(([k, v]) => (
-              <div key={k} className="kv-row">
-                <div className="kv-key">{k.replace(/_/g, ' ')}:</div>
-                <div className="kv-val">
-                  {typeof v === 'object' ? (
-                    <div className="sub-kv">
-                      {Object.entries(v).map(([kk, vv]) => (
-                        <div key={kk} className="kv-row">
-                          <div className="kv-key small">{kk}:</div>
-                          <div className="kv-val small">{String(vv)}</div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    String(v)
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {Array.isArray(data.potential_challenges_and_mitigation_strategies) && (
-        <section className="json-section">
-          <h4>Potential Challenges & Mitigation</h4>
-          <ol className="challenge-list">
-            {data.potential_challenges_and_mitigation_strategies.map((c: any, i: number) => (
-              <li key={i}>
-                <strong>{c.challenge}</strong>
-                <div className="kv-val">{c.mitigation}</div>
-              </li>
-            ))}
-          </ol>
-        </section>
-      )}
-    </div>
-  );
-}
 
