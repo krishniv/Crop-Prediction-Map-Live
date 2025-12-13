@@ -20,6 +20,14 @@
 import React, {useCallback, useState, useEffect, useRef} from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  SignUpButton,
+  UserButton,
+  useUser,
+} from '@clerk/clerk-react';
 
 import ErrorScreen from './components/ErrorScreen';
 import Sidebar from './components/Sidebar';
@@ -327,6 +335,7 @@ function PrettyJson({ data, isExpanded, onToggle }: { data: any; isExpanded?: bo
 }
 
 function AppComponent() {
+  const { user, isSignedIn } = useUser();
   const [map, setMap] = useState<google.maps.maps3d.Map3DElement | null>(null);
   const placesLib = useMapsLibrary('places');
   const geocodingLib = useMapsLibrary('geocoding');
@@ -340,9 +349,6 @@ function AppComponent() {
   const consolePanelRef = useRef<HTMLDivElement>(null);
   const controlTrayRef = useRef<HTMLElement>(null);
   const [padding, setPadding] = useState<[number, number, number, number]>([0.05, 0.05, 0.05, 0.05]);
-  /** ---------------- Login state ---------------- **/
-  const [showSignIn, setShowSignIn] = useState(false);
-  const [farmer, setFarmer] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<'map' | 'soil-analyzer' | 'news' | 'features'>('map');
   /** ---------------- Weather data state ---------------- **/
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
@@ -353,27 +359,9 @@ function AppComponent() {
   const [rightPanelWidth, setRightPanelWidth] = useState(384);
   const [isResizingLeft, setIsResizingLeft] = useState(false);
   const [isResizingRight, setIsResizingRight] = useState(false);
-  
-  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-      const formData = new FormData(e.currentTarget);
-      const email = formData.get("email") as string;
-      const name = email.split("@")[0];
-      setFarmer(name);
-      setShowSignIn(false);
-    };
-  
-  const handleLogout = () => setFarmer(null);
-  
-  /** persist login **/
-  useEffect(() => {
-      const saved = localStorage.getItem("farmer");
-      if (saved) setFarmer(saved);
-  }, []);
-    useEffect(() => {
-      if (farmer) localStorage.setItem("farmer", farmer);
-      else localStorage.removeItem("farmer");
-    }, [farmer]);
+  /** ---------------- Session timeout state ---------------- **/
+  const [showSignInPrompt, setShowSignInPrompt] = useState(false);
+  const sessionStartTime = useRef<number>(Date.now());
   
   /** ---------------- Map logic ---------------- **/
   useEffect(() => {
@@ -418,6 +406,34 @@ function AppComponent() {
       if (banner) banner.style.display = 'none';
     }
   }, [map]);
+
+  /** ---------------- Session timeout logic ---------------- **/
+  useEffect(() => {
+    // Reset session start time when user signs in
+    if (isSignedIn) {
+      sessionStartTime.current = Date.now();
+      setShowSignInPrompt(false);
+      return;
+    }
+
+    // Check if 2 minutes (120000 ms) have passed
+    const checkSessionTimeout = () => {
+      const elapsed = Date.now() - sessionStartTime.current;
+      const twoMinutes = 2 * 60 * 1000; // 2 minutes in milliseconds
+      
+      if (elapsed >= twoMinutes && !isSignedIn) {
+        setShowSignInPrompt(true);
+      }
+    };
+
+    // Check immediately and then every 10 seconds
+    checkSessionTimeout();
+    const intervalId = setInterval(checkSessionTimeout, 10000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [isSignedIn]);
 
   useEffect(() => {
     if (!mapController.current) return;
@@ -650,9 +666,118 @@ function AppComponent() {
             <span className="material-symbols-outlined">notifications</span>
             <span className="notification-badge"></span>
           </button>
-          <div className="user-avatar" style={{backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuB-rO6cA-OSMD-zVG9BlKQw2WMGotPDu-nf1txIwxxFyN3imDO_gITMJvxHYD4KCmF81lOHbCHtn14bgHheGsYWrf4QNxlwWp1qZEFM8W3ZpAzkyw3QaxweHlgUPiO4PDC1b6alLddRKIZwaVwjGX-JZ5V5ZzbF1VNnscl7T5S6uC-abkkuE0uK7YRcfvBkcBswh0tzsPd8k1k3sgc9Nmt3VHn_26OTojvvO8OBUR3ET_9MH_FaHn8xlgrTXzJZElEIx-bn9Qi56qjb")'}}></div>
+          <SignedOut>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <SignInButton mode="modal">
+                <button className="header-icon-btn" style={{ padding: '8px 16px', cursor: 'pointer' }}>
+                  Sign In
+                </button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <button className="header-icon-btn" style={{ padding: '8px 16px', cursor: 'pointer' }}>
+                  Sign Up
+                </button>
+              </SignUpButton>
+            </div>
+          </SignedOut>
+          <SignedIn>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
         </div>
       </header>
+
+      {/* Session Timeout Sign-In Prompt Modal */}
+      {showSignInPrompt && !isSignedIn && (
+        <div 
+          className="signin-modal" 
+          onClick={() => setShowSignInPrompt(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+          }}
+        >
+          <div
+            className="signin-card"
+            onClick={e => e.stopPropagation()}
+            style={{
+              backgroundColor: 'white',
+              padding: '2rem',
+              borderRadius: '12px',
+              maxWidth: '400px',
+              width: '90%',
+              position: 'relative',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+            }}
+          >
+            <h2 style={{ marginTop: 0, marginBottom: '1rem', color: '#333' }}>
+              👨‍🌾 Sign In Required
+            </h2>
+            <p style={{ marginBottom: '1.5rem', color: '#666', lineHeight: '1.5' }}>
+              Your session has exceeded 2 minutes. Please sign in to continue using AgriConnect and access all features.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <SignInButton mode="modal">
+                <button 
+                  style={{
+                    padding: '10px 20px',
+                    backgroundColor: '#4CAF50',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    fontWeight: '500',
+                  }}
+                >
+                  Sign In
+                </button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <button 
+                  style={{
+                    padding: '10px 20px',
+                    backgroundColor: '#2196F3',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    fontWeight: '500',
+                  }}
+                >
+                  Sign Up
+                </button>
+              </SignUpButton>
+            </div>
+            <button 
+              onClick={() => setShowSignInPrompt(false)}
+              style={{
+                position: 'absolute',
+                top: '10px',
+                right: '10px',
+                background: 'none',
+                border: 'none',
+                fontSize: '24px',
+                cursor: 'pointer',
+                color: '#999',
+                padding: '0',
+                width: '30px',
+                height: '30px',
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {currentPage === 'soil-analyzer' && (
         <SoilAnalyzerPage />
@@ -666,28 +791,6 @@ function AppComponent() {
         <FeaturesPage onBack={() => setCurrentPage('map')} />
       )}
 
-      {/* 🔐 Modal */}
-      {showSignIn && (
-        <div className="signin-modal" onClick={() => setShowSignIn(false)}>
-          <div
-            className="signin-card"
-            onClick={e => e.stopPropagation()}
-          >
-            <h2>👨‍🌾 Farmer Login</h2>
-            <form onSubmit={handleLogin}>
-              <label>Email</label>
-              <input name="email" type="email" placeholder="farmer@email.com" required />
-              <label>Password</label>
-              <input name="password" type="password" placeholder="Enter password" required />
-              <button type="submit" className="login-btn">Sign In</button>
-              <p className="register-text">
-                New user? <a href="#">Create Account</a>
-              </p>
-            </form>
-            <button className="close-modal" onClick={() => setShowSignIn(false)}>✕</button>
-          </div>
-        </div>
-      )}
 
      
 
