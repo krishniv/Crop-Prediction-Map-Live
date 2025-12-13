@@ -20,6 +20,7 @@
 import React, {useCallback, useState, useEffect, useRef} from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { ClerkProvider, SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
 
 import ErrorScreen from './components/ErrorScreen';
 import Sidebar from './components/Sidebar';
@@ -64,6 +65,8 @@ if (typeof GEMINI_API_KEY !== 'string') {
 }
 // Use environment variable for Maps API key, fallback to demo key
 const MAPS_API_KEY = process.env.MAPS_API_KEY || 'AIzaSyCYTvt7YMcKjSNTnBa42djlndCeDvZHkr0';
+// Clerk publishable key from environment variable
+const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || '';
 const INITIAL_VIEW_PROPS = {
   center: {
     lat: 41.8739368,
@@ -650,7 +653,20 @@ function AppComponent() {
             <span className="material-symbols-outlined">notifications</span>
             <span className="notification-badge"></span>
           </button>
-          <div className="user-avatar" style={{backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuB-rO6cA-OSMD-zVG9BlKQw2WMGotPDu-nf1txIwxxFyN3imDO_gITMJvxHYD4KCmF81lOHbCHtn14bgHheGsYWrf4QNxlwWp1qZEFM8W3ZpAzkyw3QaxweHlgUPiO4PDC1b6alLddRKIZwaVwjGX-JZ5V5ZzbF1VNnscl7T5S6uC-abkkuE0uK7YRcfvBkcBswh0tzsPd8k1k3sgc9Nmt3VHn_26OTojvvO8OBUR3ET_9MH_FaHn8xlgrTXzJZElEIx-bn9Qi56qjb")'}}></div>
+          <SignedOut>
+            <SignInButton mode="modal">
+              <button className="header-signin-btn">Sign In</button>
+            </SignInButton>
+          </SignedOut>
+          <SignedIn>
+            <UserButton 
+              appearance={{
+                elements: {
+                  avatarBox: "user-avatar-clerk"
+                }
+              }}
+            />
+          </SignedIn>
         </div>
       </header>
 
@@ -963,17 +979,18 @@ function AppComponent() {
  */
 function App() {
   return (
-    <div className="App">
-    <ApiKeyWarning currentApiKey={MAPS_API_KEY} />
-    <APIProvider
-                version={'alpha'}
-                apiKey={MAPS_API_KEY}
-                solutionChannel={"gmp_aistudio_itineraryapplet_v1.0.0"}>  
-      <AppComponent />
-    </APIProvider>
-
-
-    </div>
+    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY}>
+      <div className="App">
+        <ApiKeyWarning currentApiKey={MAPS_API_KEY} />
+        <APIProvider
+          version={'alpha'}
+          apiKey={MAPS_API_KEY}
+          solutionChannel={"gmp_aistudio_itineraryapplet_v1.0.0"}
+        >
+          <AppComponent />
+        </APIProvider>
+      </div>
+    </ClerkProvider>
   );
 }
 
