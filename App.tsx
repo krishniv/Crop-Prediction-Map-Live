@@ -26,7 +26,6 @@ import {
   SignInButton,
   SignUpButton,
   UserButton,
-  useUser,
 } from '@clerk/clerk-react';
 
 import ErrorScreen from './components/ErrorScreen';
@@ -335,7 +334,6 @@ function PrettyJson({ data, isExpanded, onToggle }: { data: any; isExpanded?: bo
 }
 
 function AppComponent() {
-  const { user, isSignedIn } = useUser();
   const [map, setMap] = useState<google.maps.maps3d.Map3DElement | null>(null);
   const placesLib = useMapsLibrary('places');
   const geocodingLib = useMapsLibrary('geocoding');
@@ -359,9 +357,6 @@ function AppComponent() {
   const [rightPanelWidth, setRightPanelWidth] = useState(384);
   const [isResizingLeft, setIsResizingLeft] = useState(false);
   const [isResizingRight, setIsResizingRight] = useState(false);
-  /** ---------------- Session timeout state ---------------- **/
-  const [showSignInPrompt, setShowSignInPrompt] = useState(false);
-  const sessionStartTime = useRef<number>(Date.now());
   
   /** ---------------- Map logic ---------------- **/
   useEffect(() => {
@@ -406,34 +401,6 @@ function AppComponent() {
       if (banner) banner.style.display = 'none';
     }
   }, [map]);
-
-  /** ---------------- Session timeout logic ---------------- **/
-  useEffect(() => {
-    // Reset session start time when user signs in
-    if (isSignedIn) {
-      sessionStartTime.current = Date.now();
-      setShowSignInPrompt(false);
-      return;
-    }
-
-    // Check if 2 minutes (120000 ms) have passed
-    const checkSessionTimeout = () => {
-      const elapsed = Date.now() - sessionStartTime.current;
-      const twoMinutes = 2 * 60 * 1000; // 2 minutes in milliseconds
-      
-      if (elapsed >= twoMinutes && !isSignedIn) {
-        setShowSignInPrompt(true);
-      }
-    };
-
-    // Check immediately and then every 10 seconds
-    checkSessionTimeout();
-    const intervalId = setInterval(checkSessionTimeout, 10000);
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [isSignedIn]);
 
   useEffect(() => {
     if (!mapController.current) return;
@@ -685,99 +652,6 @@ function AppComponent() {
           </SignedIn>
         </div>
       </header>
-
-      {/* Session Timeout Sign-In Prompt Modal */}
-      {showSignInPrompt && !isSignedIn && (
-        <div 
-          className="signin-modal" 
-          onClick={() => setShowSignInPrompt(false)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10000,
-          }}
-        >
-          <div
-            className="signin-card"
-            onClick={e => e.stopPropagation()}
-            style={{
-              backgroundColor: 'white',
-              padding: '2rem',
-              borderRadius: '12px',
-              maxWidth: '400px',
-              width: '90%',
-              position: 'relative',
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
-            }}
-          >
-            <h2 style={{ marginTop: 0, marginBottom: '1rem', color: '#333' }}>
-              👨‍🌾 Sign In Required
-            </h2>
-            <p style={{ marginBottom: '1.5rem', color: '#666', lineHeight: '1.5' }}>
-              Your session has exceeded 2 minutes. Please sign in to continue using AgriConnect and access all features.
-            </p>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <SignInButton mode="modal">
-                <button 
-                  style={{
-                    padding: '10px 20px',
-                    backgroundColor: '#4CAF50',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontSize: '16px',
-                    fontWeight: '500',
-                  }}
-                >
-                  Sign In
-                </button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <button 
-                  style={{
-                    padding: '10px 20px',
-                    backgroundColor: '#2196F3',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontSize: '16px',
-                    fontWeight: '500',
-                  }}
-                >
-                  Sign Up
-                </button>
-              </SignUpButton>
-            </div>
-            <button 
-              onClick={() => setShowSignInPrompt(false)}
-              style={{
-                position: 'absolute',
-                top: '10px',
-                right: '10px',
-                background: 'none',
-                border: 'none',
-                fontSize: '24px',
-                cursor: 'pointer',
-                color: '#999',
-                padding: '0',
-                width: '30px',
-                height: '30px',
-              }}
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-      )}
 
       {currentPage === 'soil-analyzer' && (
         <SoilAnalyzerPage />
