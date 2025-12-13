@@ -289,3 +289,16 @@ export const useMapStore = create<{
   setCameraTarget: target => set({ cameraTarget: target }),
   setPreventAutoFrame: prevent => set({ preventAutoFrame: prevent }),
 }));
+
+/**
+ * Agricultural Recommendations
+ */
+export const useAgriculturalStore = create<{
+  recommendations: string | null;
+  setRecommendations: (recommendations: string | null) => void;
+  clearRecommendations: () => void;
+}>(set => ({
+  recommendations: null,
+  setRecommendations: (recommendations: string | null) => set({ recommendations }),
+  clearRecommendations: () => set({ recommendations: null }),
+}));

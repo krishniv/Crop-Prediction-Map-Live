@@ -10,7 +10,7 @@
 
 import axios from 'axios';
 import { GoogleGenAI, GenerateContentResponse } from '@google/genai';
-import { useMapStore } from '@/lib/state';
+import { useMapStore, MapMarker } from '@/lib/state';
 import { AGRICULTURAL_AGENT_PROMPT } from './constants.ts';
 
 // ----------------------
@@ -43,7 +43,19 @@ const AGRICULTURAL_SYS_INSTRUCTIONS = AGRICULTURAL_AGENT_PROMPT;
 // ----------------------
 
 function zoomToLocation(latitude: number, longitude: number): void {
-  const { setCameraTarget, setPreventAutoFrame } = useMapStore.getState();
+  const { setCameraTarget, setPreventAutoFrame, setMarkers } = useMapStore.getState();
+
+  // Add marker at the location
+  const marker: MapMarker = {
+    position: {
+      lat: latitude,
+      lng: longitude,
+      altitude: 0,
+    },
+    label: `Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+    showLabel: false,
+  };
+  setMarkers([marker]);
 
   setCameraTarget({
     center: { lat: latitude, lng: longitude, altitude: 750 },
@@ -175,6 +187,10 @@ export async function fetchAgriculturalRecommendations(
   // Validate coordinates using Maps API
   // ------------------------
   const invalidMsg = await isInvalidAgriculturalLocation(params.latitude, params.longitude, MAP_KEY);
+  
+  // Pan to location even if invalid, so user can see where they're looking
+  zoomToLocation(params.latitude, params.longitude);
+  
   if (invalidMsg) {
     return {
       candidates: [
@@ -232,7 +248,6 @@ ${params.multiCrop ? `Multi Crop: ${params.multiCrop}` : ''}`;
 
     const data = await response.json();
 
-    zoomToLocation(params.latitude, params.longitude);
     console.log('Agricultural Recommendations Response:', data);
 
     return data as GenerateContentResponse;
@@ -270,13 +285,65 @@ export async function isInvalidAgriculturalLocation(
 
     const result = geoData.results[0];
     const types = result.types || [];
+    const formattedAddress = (result.formatted_address || '').toLowerCase();
+    const addressComponents = result.address_components || [];
 
-    // 2️⃣ Non-agricultural surface check
+    // 2️⃣ Water body check
+    const waterTypes = [
+      'ocean',
+      'sea',
+      'lake',
+      'river',
+      'bay',
+      'strait',
+      'channel',
+      'water',
+      'waterway',
+      'aqueduct',
+      'reservoir',
+      'harbor',
+      'port',
+      'marina',
+      'beach',
+      'coast',
+      'shoreline',
+      'creek',
+      'stream',
+      'wetland',
+      'swamp',
+      'marsh',
+      'lagoon',
+      'estuary',
+    ];
+
+    // Check location types
+    const hasWaterType = types.some((type: string) =>
+      waterTypes.some((waterType) => type.toLowerCase().includes(waterType)),
+    );
+
+    // Check address components for water-related features
+    const hasWaterComponent = addressComponents.some((component: any) => {
+      const compTypes = (component.types || []).map((t: string) => t.toLowerCase());
+      const compName = (component.long_name || '').toLowerCase();
+      return (
+        compTypes.some((t: string) => waterTypes.some((wt) => t.includes(wt))) ||
+        waterTypes.some((wt) => compName.includes(wt))
+      );
+    });
+
+    // Check formatted address for water-related keywords
+    const hasWaterKeywords = waterTypes.some((wt) => formattedAddress.includes(wt));
+
+    if (hasWaterType || hasWaterComponent || hasWaterKeywords) {
+      return 'The coordinates are located in a water body (ocean, sea, lake, river, etc.). Agriculture is not possible in water bodies.';
+    }
+
+    // 3️⃣ Non-agricultural surface check
     if (types.includes('natural_feature') || types.includes('establishment')) {
       return 'The coordinates correspond to a non-agricultural feature or built-up area.';
     }
 
-    // 3️⃣ Country-level exclusion
+    // 4️⃣ Country-level exclusion
     const countryComponent = result.address_components.find((c: any) =>
       c.types.includes('country'),
     );

@@ -18,20 +18,21 @@
  * limitations under the License.
  */
 import React, {useCallback, useState, useEffect, useRef} from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
-import ControlTray from './components/ControlTray';
 import ErrorScreen from './components/ErrorScreen';
 import Sidebar from './components/Sidebar';
 import AgriculturalForm from './components/AgriculturalForm';
 import { LiveAPIProvider } from './contexts/LiveAPIContext';
-// FIX: Correctly import APIProvider as a named export.
 import { APIProvider, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { Map3D, Map3DCameraProps} from './components/map-3d';
-import { useMapStore } from './lib/state';
+import { useMapStore, useAgriculturalStore } from './lib/state';
 import { MapController } from './lib/map-controller';
-
-import { SoilAnalyzerButton } from './components/SoilAnalyzerButton';
 import { SoilAnalyzerPage } from './components/SoilAnalyzerPage';
+import { NewsPage } from './components/NewsPage';
+import { FeaturesPage } from './components/FeaturesPage';
+import { fetchWeatherData, WeatherData } from './lib/weather-api';
 
 const ApiKeyWarning = ({ currentApiKey }: { currentApiKey: string }) => {
   const [isVisible, setIsVisible] = useState(true);
@@ -76,6 +77,255 @@ const INITIAL_VIEW_PROPS = {
 };
 
 
+// Helper component to format and display recommendations
+function FormattedRecommendations({ text }: { text: string }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Try multiple heuristics to recover JSON from the assistant response.
+  const tryParse = (candidate: string) => {
+    try {
+      return JSON.parse(candidate);
+    } catch (e) {
+      return null;
+    }
+  };
+
+  // 1) direct parse
+  let parsed = tryParse(text);
+  if (!parsed) {
+    // 2) strip code fences ```json ... ``` or ``` ... ```
+    const fenceMatch = text.match(/```(?:json\n)?([\s\S]*?)```/i);
+    if (fenceMatch && fenceMatch[1]) {
+      parsed = tryParse(fenceMatch[1].trim());
+    }
+  }
+
+  if (!parsed) {
+    // 3) extract first {...} block
+    const firstOpen = text.indexOf('{');
+    const lastClose = text.lastIndexOf('}');
+    if (firstOpen !== -1 && lastClose !== -1 && lastClose > firstOpen) {
+      const sub = text.slice(firstOpen, lastClose + 1);
+      parsed = tryParse(sub);
+    }
+  }
+
+  if (!parsed) {
+    // 4) Sometimes the assistant returns a JSON string (escaped) inside quotes
+    const trimmed = text.trim();
+    if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+      try {
+        const unquoted = JSON.parse(trimmed);
+        parsed = tryParse(unquoted);
+      } catch (e) {
+        // ignore
+      }
+    }
+  }
+
+  if (parsed) {
+    return <PrettyJson data={parsed} isExpanded={isExpanded} onToggle={() => setIsExpanded(!isExpanded)} />;
+  }
+
+  // fallback: render markdown/raw text with read more functionality
+  const paragraphs = text.split('\n\n').filter(p => p.trim());
+  const firstParagraph = paragraphs[0] || text;
+  const hasMore = paragraphs.length > 1;
+
+  return (
+    <div className="markdown-recommendations">
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{firstParagraph}</ReactMarkdown>
+      {hasMore && !isExpanded && (
+        <button 
+          className="read-more-btn" 
+          onClick={() => setIsExpanded(true)}
+          type="button"
+        >
+          <span>Read More</span>
+          <span className="material-symbols-outlined">expand_more</span>
+        </button>
+      )}
+      {hasMore && isExpanded && (
+        <>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{paragraphs.slice(1).join('\n\n')}</ReactMarkdown>
+          <button 
+            className="read-more-btn" 
+            onClick={() => setIsExpanded(false)}
+            type="button"
+          >
+            <span>Read Less</span>
+            <span className="material-symbols-outlined">expand_less</span>
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function PrettyJson({ data, isExpanded, onToggle }: { data: any; isExpanded?: boolean; onToggle?: () => void }) {
+  // Extract first paragraph/section for preview
+  // Priority: location_description > first recommended crop > first available section
+  const firstSection = data.location_description ? (
+    <section className="json-section">
+      <h4>Location Overview</h4>
+      <p className="json-value">{data.location_description}</p>
+    </section>
+  ) : (Array.isArray(data.recommended_crops) && data.recommended_crops.length > 0) ? (
+    <section className="json-section">
+      <h4>Recommended Crops</h4>
+      <div className="crop-list">
+        <article className="crop-card">
+          <div className="crop-card-header">
+            <strong className="crop-name">{data.recommended_crops[0].crop_name}</strong>
+            {data.recommended_crops[0].percentage_area_allocation && (
+              <span className="crop-alloc">{data.recommended_crops[0].percentage_area_allocation}</span>
+            )}
+          </div>
+          {data.recommended_crops[0].rationale && <p className="crop-rationale">{data.recommended_crops[0].rationale}</p>}
+        </article>
+      </div>
+    </section>
+  ) : null;
+
+  const hasMoreContent = !!(data.recommended_crops?.length > 1 || 
+    data.expected_yield_estimates || 
+    data.soil_preparation_requirements || 
+    data.water_and_fertilizer_needs || 
+    data.potential_challenges_and_mitigation_strategies?.length ||
+    (data.location_description && (data.recommended_crops?.length || 
+      data.expected_yield_estimates || 
+      data.soil_preparation_requirements || 
+      data.water_and_fertilizer_needs || 
+      data.potential_challenges_and_mitigation_strategies?.length)));
+
+  return (
+    <div className="json-root">
+      {firstSection}
+      
+      {isExpanded && (
+        <>
+
+          {Array.isArray(data.recommended_crops) && data.recommended_crops.length > 0 && (
+            <section className="json-section">
+              <h4>Recommended Crops</h4>
+              <div className="crop-list">
+                {data.recommended_crops.map((c: any, idx: number) => (
+                  <article key={idx} className="crop-card">
+                    <div className="crop-card-header">
+                      <strong className="crop-name">{c.crop_name}</strong>
+                      {c.percentage_area_allocation && (
+                        <span className="crop-alloc">{c.percentage_area_allocation}</span>
+                      )}
+                    </div>
+                    {c.rationale && <p className="crop-rationale">{c.rationale}</p>}
+                    <div className="kv-grid">
+                      {c.intercropping_options && (
+                        <div className="kv-row">
+                          <div className="kv-key">Intercropping</div>
+                          <div className="kv-val">{c.intercropping_options}</div>
+                        </div>
+                      )}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {data.expected_yield_estimates && (
+            <section className="json-section">
+              <h4>Expected Yield Estimates</h4>
+              <ul className="kv-list">
+                {Object.entries(data.expected_yield_estimates).map(([k, v]) => (
+                  <li key={k}>
+                    <span className="kv-key">{k.replace(/_/g, ' ')}:</span>{' '}
+                    <span className="kv-val">{String(v)}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {data.soil_preparation_requirements && (
+            <section className="json-section">
+              <h4>Soil Preparation</h4>
+              <div className="kv-list">
+                {Object.entries(data.soil_preparation_requirements).map(([k, v]) => (
+                  <div key={k} className="kv-row">
+                    <div className="kv-key">{k.replace(/_/g, ' ')}:</div>
+                    <div className="kv-val">{String(v)}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {data.water_and_fertilizer_needs && (
+            <section className="json-section">
+              <h4>Water & Fertilizer</h4>
+              <div className="kv-list">
+                {Object.entries(data.water_and_fertilizer_needs).map(([k, v]) => (
+                  <div key={k} className="kv-row">
+                    <div className="kv-key">{k.replace(/_/g, ' ')}:</div>
+                    <div className="kv-val">
+                      {typeof v === 'object' ? (
+                        <div className="sub-kv">
+                          {Object.entries(v).map(([kk, vv]) => (
+                            <div key={kk} className="kv-row">
+                              <div className="kv-key small">{kk}:</div>
+                              <div className="kv-val small">{String(vv)}</div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        String(v)
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {Array.isArray(data.potential_challenges_and_mitigation_strategies) && (
+            <section className="json-section">
+              <h4>Potential Challenges & Mitigation</h4>
+              <ol className="challenge-list">
+                {data.potential_challenges_and_mitigation_strategies.map((c: any, i: number) => (
+                  <li key={i}>
+                    <strong>{c.challenge}</strong>
+                    <div className="kv-val">{c.mitigation}</div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
+        </>
+      )}
+      
+      {hasMoreContent && (
+        <button 
+          className="read-more-btn" 
+          onClick={onToggle}
+          type="button"
+        >
+          {isExpanded ? (
+            <>
+              <span>Read Less</span>
+              <span className="material-symbols-outlined">expand_less</span>
+            </>
+          ) : (
+            <>
+              <span>Read More</span>
+              <span className="material-symbols-outlined">expand_more</span>
+            </>
+          )}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function AppComponent() {
   const [map, setMap] = useState<google.maps.maps3d.Map3DElement | null>(null);
   const placesLib = useMapsLibrary('places');
@@ -83,6 +333,7 @@ function AppComponent() {
   const [geocoder, setGeocoder] = useState<google.maps.Geocoder | null>(null);
   const [viewProps, setViewProps] = useState(INITIAL_VIEW_PROPS);
   const { markers, rectangularOverlays, cameraTarget, setCameraTarget, preventAutoFrame } = useMapStore();
+  const { recommendations } = useAgriculturalStore();
   const mapController = useRef<MapController | null>(null);
   const maps3dLib = useMapsLibrary('maps3d');
   const elevationLib = useMapsLibrary('elevation');
@@ -92,7 +343,16 @@ function AppComponent() {
   /** ---------------- Login state ---------------- **/
   const [showSignIn, setShowSignIn] = useState(false);
   const [farmer, setFarmer] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState<'map' | 'soil-analyzer'>('map');
+  const [currentPage, setCurrentPage] = useState<'map' | 'soil-analyzer' | 'news' | 'features'>('map');
+  /** ---------------- Weather data state ---------------- **/
+  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
+  const [isLoadingWeather, setIsLoadingWeather] = useState(false);
+  const [locationName, setLocationName] = useState<string>('');
+  /** ---------------- Panel resize state ---------------- **/
+  const [leftPanelWidth, setLeftPanelWidth] = useState(384);
+  const [rightPanelWidth, setRightPanelWidth] = useState(384);
+  const [isResizingLeft, setIsResizingLeft] = useState(false);
+  const [isResizingRight, setIsResizingRight] = useState(false);
   
   const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -190,10 +450,129 @@ function AppComponent() {
     }
   }, [cameraTarget, setCameraTarget]);
 
+  /** ---------------- Weather data fetching ---------------- **/
+  // Fetch weather data when markers or overlays change, or use initial location
+  useEffect(() => {
+    const fetchWeatherForLocation = async () => {
+      // Priority: rectangular overlays > markers > initial location
+      let targetLat: number | null = null;
+      let targetLng: number | null = null;
+
+      if (rectangularOverlays.length > 0) {
+        const overlay = rectangularOverlays[0];
+        targetLat = overlay.center.lat;
+        targetLng = overlay.center.lng;
+      } else if (markers.length > 0) {
+        const marker = markers[0];
+        targetLat = marker.position.lat;
+        targetLng = marker.position.lng;
+      } else {
+        // Use initial location if no markers/overlays
+        targetLat = INITIAL_VIEW_PROPS.center.lat;
+        targetLng = INITIAL_VIEW_PROPS.center.lng;
+      }
+
+      if (targetLat !== null && targetLng !== null) {
+        setIsLoadingWeather(true);
+        
+        // Fetch weather data
+        const weather = await fetchWeatherData(targetLat, targetLng);
+        setWeatherData(weather);
+        
+        // Fetch location name using reverse geocoding
+        if (geocoder) {
+          try {
+            const results = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
+              geocoder.geocode(
+                { location: { lat: targetLat!, lng: targetLng! } },
+                (results, status) => {
+                  if (status === 'OK' && results) {
+                    resolve(results);
+                  } else {
+                    reject(new Error(`Geocoding failed: ${status}`));
+                  }
+                }
+              );
+            });
+            
+            if (results && results.length > 0) {
+              // Extract a readable location name
+              const result = results[0];
+              // Try to get a formatted address or locality
+              const locationName = result.formatted_address || 
+                                   (result.address_components && result.address_components
+                                     .find(comp => comp.types.includes('locality'))?.long_name) ||
+                                   (result.address_components && result.address_components
+                                     .find(comp => comp.types.includes('administrative_area_level_1'))?.long_name) ||
+                                   `${targetLat.toFixed(4)}, ${targetLng.toFixed(4)}`;
+              setLocationName(locationName);
+            } else {
+              setLocationName(`${targetLat.toFixed(4)}, ${targetLng.toFixed(4)}`);
+            }
+          } catch (error) {
+            console.warn('Error fetching location name:', error);
+            // Fallback to coordinates or weather data location
+            setLocationName(weather?.location || `${targetLat.toFixed(4)}, ${targetLng.toFixed(4)}`);
+          }
+        } else {
+          // If geocoder not available, use weather data location or coordinates
+          setLocationName(weather?.location || `${targetLat.toFixed(4)}, ${targetLng.toFixed(4)}`);
+        }
+        
+        setIsLoadingWeather(false);
+      }
+    };
+
+    fetchWeatherForLocation();
+  }, [markers, rectangularOverlays, geocoder]);
+
   const handleCameraChange = useCallback(
     (props: Map3DCameraProps) => setViewProps(oldProps => ({ ...oldProps, ...props })),
     []
   );
+
+  /** ---------------- Panel resize handlers ---------------- **/
+  const handleMouseDownLeft = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizingLeft(true);
+  }, []);
+
+  const handleMouseDownRight = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizingRight(true);
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isResizingLeft) {
+        const newWidth = Math.max(250, Math.min(600, e.clientX));
+        setLeftPanelWidth(newWidth);
+      }
+      if (isResizingRight) {
+        const newWidth = Math.max(250, Math.min(600, window.innerWidth - e.clientX));
+        setRightPanelWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingLeft(false);
+      setIsResizingRight(false);
+    };
+
+    if (isResizingLeft || isResizingRight) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizingLeft, isResizingRight]);
 
   /** ---------------- UI ---------------- **/
   return (
@@ -207,54 +586,84 @@ function AppComponent() {
     >
       <ErrorScreen />
       <Sidebar />
-        {currentPage === 'soil-analyzer' && (
-          <SoilAnalyzerPage 
-            onBack={() => setCurrentPage('map')} 
-          />
-        )}
+      
+      {/* CropYield Pro Header - Always visible */}
+      <header className="cropyield-header">
+        <div className="header-left">
+          <div className="header-logo">
+            <svg className="logo-icon" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+              <g clipPath="url(#clip0_6_319)">
+                <path d="M8.57829 8.57829C5.52816 11.6284 3.451 15.5145 2.60947 19.7452C1.76794 23.9758 2.19984 28.361 3.85056 32.3462C5.50128 36.3314 8.29667 39.7376 11.8832 42.134C15.4698 44.5305 19.6865 45.8096 24 45.8096C28.3135 45.8096 32.5302 44.5305 36.1168 42.134C39.7033 39.7375 42.4987 36.3314 44.1494 32.3462C45.8002 28.361 46.2321 23.9758 45.3905 19.7452C44.549 15.5145 42.4718 11.6284 39.4217 8.57829L24 24L8.57829 8.57829Z" fill="currentColor"></path>
+              </g>
+              <defs>
+                <clipPath id="clip0_6_319"><rect fill="white" height="48" width="48"></rect></clipPath>
+              </defs>
+            </svg>
+          </div>
+          <div className="header-title-group">
+            <h2 
+              className="header-title clickable-title"
+              onClick={() => setCurrentPage('features')}
+              style={{ cursor: 'pointer' }}
+            >
+              AgriConnect
+            </h2>
+            <h4 className="header-subtitle">AI powered Crop Recommendations</h4>
+          </div>
+        </div>
+        
+        <div className="header-nav">
+          <a 
+            className={`nav-link ${currentPage === 'map' ? 'active' : ''}`} 
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              setCurrentPage('map');
+            }}
+          >
+            Dashboard
+          </a>
+          <a 
+            className={`nav-link ${currentPage === 'news' ? 'active' : ''}`}
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              setCurrentPage('news');
+            }}
+          >
+            News
+          </a>
+          <a 
+            className={`nav-link ${currentPage === 'soil-analyzer' ? 'active' : ''}`}
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              setCurrentPage('soil-analyzer');
+            }}
+          >
+            Soil Analyzer
+          </a>
+        </div>
 
-      {currentPage === 'map' && (
-        <>
-          {/* 🌾 AgriConnect Header with Sign In */}
-          <header className="agriconnect-header">
-            <div className="header-left">
-              <h1 className="brand-title">🌾 AgriConnect</h1>
-              <p className="brand-subtitle">Smart Crop Recommendations</p>
-            </div>
-            
-            <div className="header-right">
-              <button
-                className="news-button"
-                onClick={() => window.open('/news.html', '_blank')}
-                >
-                🗞️ Farm-o-Buzz
-              </button>
+        <div className="header-right">
+          <button className="header-icon-btn">
+            <span className="material-symbols-outlined">notifications</span>
+            <span className="notification-badge"></span>
+          </button>
+          <div className="user-avatar" style={{backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuB-rO6cA-OSMD-zVG9BlKQw2WMGotPDu-nf1txIwxxFyN3imDO_gITMJvxHYD4KCmF81lOHbCHtn14bgHheGsYWrf4QNxlwWp1qZEFM8W3ZpAzkyw3QaxweHlgUPiO4PDC1b6alLddRKIZwaVwjGX-JZ5V5ZzbF1VNnscl7T5S6uC-abkkuE0uK7YRcfvBkcBswh0tzsPd8k1k3sgc9Nmt3VHn_26OTojvvO8OBUR3ET_9MH_FaHn8xlgrTXzJZElEIx-bn9Qi56qjb")'}}></div>
+        </div>
+      </header>
 
-              <SoilAnalyzerButton onClick={() => setCurrentPage('soil-analyzer')} />
+      {currentPage === 'soil-analyzer' && (
+        <SoilAnalyzerPage />
+      )}
 
-              {farmer ? (
-                <div className="farmer-info">
-                  <span className="farmer-icon">👨‍🌾</span>
-                  <span className="farmer-name">
-                    Welcome,&nbsp;
-                    {farmer.charAt(0).toUpperCase() + farmer.slice(1)}
-                  </span>
-                  <button className="signout-btn" onClick={handleLogout}>
-                    Log Out
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  className="signin-button"
-                  onClick={() => setShowSignIn(true)}
-                >
-                  👨‍🌾 Sign In / Sign Up
-                </button>
-              )}
-            </div>
-          </header>
-        </>
+      {currentPage === 'news' && (
+        <NewsPage />
+      )}
+
+      {currentPage === 'features' && (
+        <FeaturesPage onBack={() => setCurrentPage('map')} />
       )}
 
       {/* 🔐 Modal */}
@@ -280,59 +689,267 @@ function AppComponent() {
         </div>
       )}
 
-      {/* ✅ FULL-WIDTH INTRO MOVED ABOVE THE SPLIT LAYOUT */}
-      <section className="agriconnect-hero">
-        <div className="agriconnect-hero-content">
+     
 
-          <div className="agriconnect-description">
-            <h2>About AgriConnect Platform</h2>
-            <p>
-              AgriConnect uses advanced AI algorithms and environmental data to provide personalized crop
-              recommendations for your farm. Our system analyzes your location, soil type, climate
-              conditions, and seasonal patterns to suggest the most suitable crops for optimal yield.
-              
-            </p>
-          </div>
-
-          <div className="agriconnect-feature-cards">
-            <div className="feature-card">
-              <div className="feature-icon">🌿</div>
-              <h3>Smart Analysis</h3>
-              <p>Data-driven insights for better farming decisions based on real-time environmental factors.</p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">📈</div>
-              <h3>Maximize Yield</h3>
-              <p>Optimize your harvest with tailored recommendations that suit your specific farm conditions.</p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">🌦️</div>
-              <h3>Climate Aware</h3>
-              <p>Recommendations based on local weather patterns and seasonal climate variations.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ✅ ORIGINAL SPLIT LAYOUT BELOW */}
-      <div className="app-layout">
+      {/* 3-Column Layout */}
+      <div className="app-layout-three-col">
         {currentPage === 'map' && (
-          <div className="form-panel">
-            <AgriculturalForm />
-            {/* <div className="control-panel" ref={consolePanelRef}>
-              <ControlTray trayRef={controlTrayRef} />
-            </div> */}
-          </div>
-        )}
+          <>
+            {/* Mobile Toggle for Sidebar */}
 
-        {currentPage === 'map' && (
-          <div className="map-panel">
-            <Map3D
-              ref={element => setMap(element ?? null)}
-              onCameraChange={handleCameraChange}
-              {...viewProps}
-            />
-          </div>
+            {/* Left Sidebar - Input Farm Details */}
+            <aside className="left-sidebar" style={{ width: `${leftPanelWidth}px`, maxWidth: 'none' }}>
+              <div className="sidebar-header-mobile">
+                <label className="sidebar-close" htmlFor="filters-toggle">
+                  <span className="material-symbols-outlined">close</span>
+                </label>
+              </div>
+              <h1 className="sidebar-title">Input Farm Details</h1>
+              <AgriculturalForm />
+            </aside>
+
+            {/* Left Resize Handle */}
+            <div 
+              className="resize-handle resize-handle-left"
+              onMouseDown={handleMouseDownLeft}
+            >
+              <div className="resize-handle-line"></div>
+            </div>
+
+            {/* Center - Map */}
+            <main className="map-container">
+              <div className="map-panel">
+                <Map3D
+                  ref={element => setMap(element ?? null)}
+                  onCameraChange={handleCameraChange}
+                  {...viewProps}
+                />
+                {/* Map Controls */}
+                <div className="map-controls">
+                  <button className="map-control-btn">
+                    <span className="material-symbols-outlined">add</span>
+                  </button>
+                  <button className="map-control-btn">
+                    <span className="material-symbols-outlined">remove</span>
+                  </button>
+                  <button className="map-control-btn">
+                    <span className="material-symbols-outlined">layers</span>
+                  </button>
+                </div>
+                {/* Analysis Status Overlay */}
+             
+              </div>
+            </main>
+
+            {/* Right Resize Handle */}
+            <div 
+              className="resize-handle resize-handle-right"
+              onMouseDown={handleMouseDownRight}
+            >
+              <div className="resize-handle-line"></div>
+            </div>
+
+            {/* Right Sidebar - Prediction Summary */}
+            <aside className="right-sidebar" style={{ width: `${rightPanelWidth}px`, maxWidth: 'none' }}>
+              <div className="prediction-summary">
+                <h1 className="summary-title">
+                  <span className="material-symbols-outlined">analytics</span>
+                  Prediction Summary
+                </h1>
+                
+                <div className="recommendations-section">
+                  {recommendations ? (
+                    <div className="recommendations-details">
+                      <FormattedRecommendations text={recommendations} />
+                    </div>
+                  ) : (
+                    <div className="no-recommendations">
+                      <p>No recommendations available. Submit the form to get crop recommendations.</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="soil-data-section">
+                  <div className="soil-data-header">
+                    <h2>Weather Data</h2>
+                    <button className="view-report-btn">View Full Report</button>
+                  </div>
+                  
+                  {isLoadingWeather ? (
+                    <div className="weather-loading">
+                      <p>Loading weather data...</p>
+                    </div>
+                  ) : weatherData ? (
+                    <div className="soil-data-table">
+                      <div className="weather-location">
+                        <span className="material-symbols-outlined">location_on</span>
+                        <span>{locationName || weatherData.location}</span>
+                      </div>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Parameter</th>
+                            <th>Value</th>
+                            <th>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>Temperature</td>
+                            <td>{weatherData.temperature}°C</td>
+                            <td>
+                              <span className={`status-badge ${
+                                weatherData.temperature >= 20 && weatherData.temperature <= 30 
+                                  ? 'optimal' 
+                                  : weatherData.temperature < 10 || weatherData.temperature > 35 
+                                  ? 'low' 
+                                  : 'good'
+                              }`}>
+                                {weatherData.temperature >= 20 && weatherData.temperature <= 30 
+                                  ? 'OPTIMAL' 
+                                  : weatherData.temperature < 10 || weatherData.temperature > 35 
+                                  ? 'EXTREME' 
+                                  : 'GOOD'}
+                              </span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>Feels Like</td>
+                            <td>{weatherData.feelsLike}°C</td>
+                            <td><span className="status-badge neutral">-</span></td>
+                          </tr>
+                          <tr>
+                            <td>Humidity</td>
+                            <td>{weatherData.humidity}%</td>
+                            <td>
+                              <span className={`status-badge ${
+                                weatherData.humidity >= 40 && weatherData.humidity <= 70 
+                                  ? 'optimal' 
+                                  : weatherData.humidity < 30 || weatherData.humidity > 80 
+                                  ? 'low' 
+                                  : 'good'
+                              }`}>
+                                {weatherData.humidity >= 40 && weatherData.humidity <= 70 
+                                  ? 'OPTIMAL' 
+                                  : weatherData.humidity < 30 || weatherData.humidity > 80 
+                                  ? 'EXTREME' 
+                                  : 'GOOD'}
+                              </span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>Wind Speed</td>
+                            <td>{weatherData.windSpeed} km/h</td>
+                            <td>
+                              <span className={`status-badge ${
+                                weatherData.windSpeed < 30 
+                                  ? 'good' 
+                                  : weatherData.windSpeed > 60 
+                                  ? 'low' 
+                                  : 'neutral'
+                              }`}>
+                                {weatherData.windSpeed < 30 
+                                  ? 'NORMAL' 
+                                  : weatherData.windSpeed > 60 
+                                  ? 'HIGH' 
+                                  : 'MODERATE'}
+                              </span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>Pressure</td>
+                            <td>{weatherData.pressure} hPa</td>
+                            <td>
+                              <span className={`status-badge ${
+                                weatherData.pressure >= 1010 && weatherData.pressure <= 1020 
+                                  ? 'optimal' 
+                                  : 'neutral'
+                              }`}>
+                                {weatherData.pressure >= 1010 && weatherData.pressure <= 1020 
+                                  ? 'NORMAL' 
+                                  : 'CHECK'}
+                              </span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>Visibility</td>
+                            <td>{weatherData.visibility} km</td>
+                            <td>
+                              <span className={`status-badge ${
+                                weatherData.visibility >= 10 
+                                  ? 'good' 
+                                  : weatherData.visibility < 5 
+                                  ? 'low' 
+                                  : 'neutral'
+                              }`}>
+                                {weatherData.visibility >= 10 
+                                  ? 'CLEAR' 
+                                  : weatherData.visibility < 5 
+                                  ? 'POOR' 
+                                  : 'MODERATE'}
+                              </span>
+                            </td>
+                          </tr>
+                          {weatherData.uvIndex !== undefined && (
+                            <tr>
+                              <td>UV Index</td>
+                              <td>{weatherData.uvIndex}</td>
+                              <td>
+                                <span className={`status-badge ${
+                                  weatherData.uvIndex <= 5 
+                                    ? 'good' 
+                                    : weatherData.uvIndex > 8 
+                                    ? 'low' 
+                                    : 'neutral'
+                                }`}>
+                                  {weatherData.uvIndex <= 5 
+                                    ? 'SAFE' 
+                                    : weatherData.uvIndex > 8 
+                                    ? 'HIGH' 
+                                    : 'MODERATE'}
+                                </span>
+                              </td>
+                            </tr>
+                          )}
+                          <tr>
+                            <td>Cloud Cover</td>
+                            <td>{weatherData.cloudCover}%</td>
+                            <td>
+                              <span className={`status-badge ${
+                                weatherData.cloudCover < 30 
+                                  ? 'good' 
+                                  : weatherData.cloudCover > 70 
+                                  ? 'neutral' 
+                                  : 'optimal'
+                              }`}>
+                                {weatherData.cloudCover < 30 
+                                  ? 'CLEAR' 
+                                  : weatherData.cloudCover > 70 
+                                  ? 'CLOUDY' 
+                                  : 'PARTLY CLOUDY'}
+                              </span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>Condition</td>
+                            <td>{weatherData.description}</td>
+                            <td><span className="status-badge neutral">-</span></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                      <div className="weather-timestamp">
+                        <small>Last updated: {new Date(weatherData.timestamp).toLocaleString()}</small>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="no-weather-data">
+                      <p>No weather data available. Please select a location.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </aside>
+          </>
         )}
       </div>
     </LiveAPIProvider>

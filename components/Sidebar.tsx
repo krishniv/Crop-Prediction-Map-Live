@@ -94,6 +94,18 @@ export default function Sidebar() {
           </button>
         </div>
         <div className="sidebar-content">
+          {/* Informational Section */}
+          <div className="sidebar-info-section">
+            <h2 className="sidebar-info-title">Input Farm Details</h2>
+            <p className="sidebar-info-text">
+              Crop Yield Prediction delivers data-driven insights to help farmers make smarter decisions. 
+              By analyzing your farm location, soil conditions, climate patterns, and seasonal data, 
+              our AI-powered system provides personalized crop recommendations optimized for maximum yield. 
+              Simply input your farm details to receive tailored recommendations that suit your specific 
+              agricultural conditions.
+            </p>
+          </div>
+          
           <div className="sidebar-section">
             <fieldset disabled={connected}>
               {isEasterEggMode && (
