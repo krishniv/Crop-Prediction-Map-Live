@@ -23,6 +23,7 @@ import React, { useState, FormEvent } from 'react';
 import { AgriculturalParameters, fetchAgriculturalRecommendations } from '@/lib/maps-grounding';
 import { useMapStore, useAgriculturalStore } from '@/lib/state';
 import { calculateRectangleCorners, calculateRectangleDimensions } from '@/lib/rectangle-utils';
+import './AgriculturalForm.css';
 
 interface AgriculturalFormProps {
   onSubmit?: (params: AgriculturalParameters) => void;

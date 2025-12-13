@@ -20,13 +20,6 @@
 import React, {useCallback, useState, useEffect, useRef} from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  SignUpButton,
-  UserButton,
-} from '@clerk/clerk-react';
 
 import ErrorScreen from './components/ErrorScreen';
 import Sidebar from './components/Sidebar';
@@ -347,6 +340,9 @@ function AppComponent() {
   const consolePanelRef = useRef<HTMLDivElement>(null);
   const controlTrayRef = useRef<HTMLElement>(null);
   const [padding, setPadding] = useState<[number, number, number, number]>([0.05, 0.05, 0.05, 0.05]);
+  /** ---------------- Login state ---------------- **/
+  const [showSignIn, setShowSignIn] = useState(false);
+  const [farmer, setFarmer] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<'map' | 'soil-analyzer' | 'news' | 'features'>('map');
   /** ---------------- Weather data state ---------------- **/
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
@@ -357,6 +353,27 @@ function AppComponent() {
   const [rightPanelWidth, setRightPanelWidth] = useState(384);
   const [isResizingLeft, setIsResizingLeft] = useState(false);
   const [isResizingRight, setIsResizingRight] = useState(false);
+  
+  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      const formData = new FormData(e.currentTarget);
+      const email = formData.get("email") as string;
+      const name = email.split("@")[0];
+      setFarmer(name);
+      setShowSignIn(false);
+    };
+  
+  const handleLogout = () => setFarmer(null);
+  
+  /** persist login **/
+  useEffect(() => {
+      const saved = localStorage.getItem("farmer");
+      if (saved) setFarmer(saved);
+  }, []);
+    useEffect(() => {
+      if (farmer) localStorage.setItem("farmer", farmer);
+      else localStorage.removeItem("farmer");
+    }, [farmer]);
   
   /** ---------------- Map logic ---------------- **/
   useEffect(() => {
@@ -633,23 +650,7 @@ function AppComponent() {
             <span className="material-symbols-outlined">notifications</span>
             <span className="notification-badge"></span>
           </button>
-          <SignedOut>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <SignInButton mode="modal">
-                <button className="header-icon-btn" style={{ padding: '8px 16px', cursor: 'pointer' }}>
-                  Sign In
-                </button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <button className="header-icon-btn" style={{ padding: '8px 16px', cursor: 'pointer' }}>
-                  Sign Up
-                </button>
-              </SignUpButton>
-            </div>
-          </SignedOut>
-          <SignedIn>
-            <UserButton afterSignOutUrl="/" />
-          </SignedIn>
+          <div className="user-avatar" style={{backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuB-rO6cA-OSMD-zVG9BlKQw2WMGotPDu-nf1txIwxxFyN3imDO_gITMJvxHYD4KCmF81lOHbCHtn14bgHheGsYWrf4QNxlwWp1qZEFM8W3ZpAzkyw3QaxweHlgUPiO4PDC1b6alLddRKIZwaVwjGX-JZ5V5ZzbF1VNnscl7T5S6uC-abkkuE0uK7YRcfvBkcBswh0tzsPd8k1k3sgc9Nmt3VHn_26OTojvvO8OBUR3ET_9MH_FaHn8xlgrTXzJZElEIx-bn9Qi56qjb")'}}></div>
         </div>
       </header>
 
@@ -665,6 +666,28 @@ function AppComponent() {
         <FeaturesPage onBack={() => setCurrentPage('map')} />
       )}
 
+      {/* 🔐 Modal */}
+      {showSignIn && (
+        <div className="signin-modal" onClick={() => setShowSignIn(false)}>
+          <div
+            className="signin-card"
+            onClick={e => e.stopPropagation()}
+          >
+            <h2>👨‍🌾 Farmer Login</h2>
+            <form onSubmit={handleLogin}>
+              <label>Email</label>
+              <input name="email" type="email" placeholder="farmer@email.com" required />
+              <label>Password</label>
+              <input name="password" type="password" placeholder="Enter password" required />
+              <button type="submit" className="login-btn">Sign In</button>
+              <p className="register-text">
+                New user? <a href="#">Create Account</a>
+              </p>
+            </form>
+            <button className="close-modal" onClick={() => setShowSignIn(false)}>✕</button>
+          </div>
+        </div>
+      )}
 
      
 
