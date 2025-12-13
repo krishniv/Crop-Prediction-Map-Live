@@ -21,20 +21,18 @@ import React, {useCallback, useState, useEffect, useRef} from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-import ControlTray from './components/ControlTray';
 import ErrorScreen from './components/ErrorScreen';
 import Sidebar from './components/Sidebar';
 import AgriculturalForm from './components/AgriculturalForm';
 import { LiveAPIProvider } from './contexts/LiveAPIContext';
-// FIX: Correctly import APIProvider as a named export.
 import { APIProvider, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { Map3D, Map3DCameraProps} from './components/map-3d';
 import { useMapStore, useAgriculturalStore } from './lib/state';
 import { MapController } from './lib/map-controller';
-
-import { SoilAnalyzerButton } from './components/SoilAnalyzerButton';
 import { SoilAnalyzerPage } from './components/SoilAnalyzerPage';
 import { NewsPage } from './components/NewsPage';
+import { FeaturesPage } from './components/FeaturesPage';
+import { fetchWeatherData, WeatherData } from './lib/weather-api';
 
 const ApiKeyWarning = ({ currentApiKey }: { currentApiKey: string }) => {
   const [isVisible, setIsVisible] = useState(true);
@@ -81,6 +79,8 @@ const INITIAL_VIEW_PROPS = {
 
 // Helper component to format and display recommendations
 function FormattedRecommendations({ text }: { text: string }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
   // Try multiple heuristics to recover JSON from the assistant response.
   const tryParse = (candidate: string) => {
     try {
@@ -124,117 +124,203 @@ function FormattedRecommendations({ text }: { text: string }) {
   }
 
   if (parsed) {
-    return <PrettyJson data={parsed} />;
+    return <PrettyJson data={parsed} isExpanded={isExpanded} onToggle={() => setIsExpanded(!isExpanded)} />;
   }
 
-  // fallback: render markdown/raw text
-  return <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>;
+  // fallback: render markdown/raw text with read more functionality
+  const paragraphs = text.split('\n\n').filter(p => p.trim());
+  const firstParagraph = paragraphs[0] || text;
+  const hasMore = paragraphs.length > 1;
+
+  return (
+    <div className="markdown-recommendations">
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{firstParagraph}</ReactMarkdown>
+      {hasMore && !isExpanded && (
+        <button 
+          className="read-more-btn" 
+          onClick={() => setIsExpanded(true)}
+          type="button"
+        >
+          <span>Read More</span>
+          <span className="material-symbols-outlined">expand_more</span>
+        </button>
+      )}
+      {hasMore && isExpanded && (
+        <>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{paragraphs.slice(1).join('\n\n')}</ReactMarkdown>
+          <button 
+            className="read-more-btn" 
+            onClick={() => setIsExpanded(false)}
+            type="button"
+          >
+            <span>Read Less</span>
+            <span className="material-symbols-outlined">expand_less</span>
+          </button>
+        </>
+      )}
+    </div>
+  );
 }
 
-function PrettyJson({ data }: { data: any }) {
+function PrettyJson({ data, isExpanded, onToggle }: { data: any; isExpanded?: boolean; onToggle?: () => void }) {
+  // Extract first paragraph/section for preview
+  // Priority: location_description > first recommended crop > first available section
+  const firstSection = data.location_description ? (
+    <section className="json-section">
+      <h4>Location Overview</h4>
+      <p className="json-value">{data.location_description}</p>
+    </section>
+  ) : (Array.isArray(data.recommended_crops) && data.recommended_crops.length > 0) ? (
+    <section className="json-section">
+      <h4>Recommended Crops</h4>
+      <div className="crop-list">
+        <article className="crop-card">
+          <div className="crop-card-header">
+            <strong className="crop-name">{data.recommended_crops[0].crop_name}</strong>
+            {data.recommended_crops[0].percentage_area_allocation && (
+              <span className="crop-alloc">{data.recommended_crops[0].percentage_area_allocation}</span>
+            )}
+          </div>
+          {data.recommended_crops[0].rationale && <p className="crop-rationale">{data.recommended_crops[0].rationale}</p>}
+        </article>
+      </div>
+    </section>
+  ) : null;
+
+  const hasMoreContent = !!(data.recommended_crops?.length > 1 || 
+    data.expected_yield_estimates || 
+    data.soil_preparation_requirements || 
+    data.water_and_fertilizer_needs || 
+    data.potential_challenges_and_mitigation_strategies?.length ||
+    (data.location_description && (data.recommended_crops?.length || 
+      data.expected_yield_estimates || 
+      data.soil_preparation_requirements || 
+      data.water_and_fertilizer_needs || 
+      data.potential_challenges_and_mitigation_strategies?.length)));
+
   return (
     <div className="json-root">
-      {data.location_description && (
-        <section className="json-section">
-          <h4>Location Overview</h4>
-          <p className="json-value">{data.location_description}</p>
-        </section>
-      )}
+      {firstSection}
+      
+      {isExpanded && (
+        <>
 
-      {Array.isArray(data.recommended_crops) && data.recommended_crops.length > 0 && (
-        <section className="json-section">
-          <h4>Recommended Crops</h4>
-          <div className="crop-list">
-            {data.recommended_crops.map((c: any, idx: number) => (
-              <article key={idx} className="crop-card">
-                <div className="crop-card-header">
-                  <strong className="crop-name">{c.crop_name}</strong>
-                  {c.percentage_area_allocation && (
-                    <span className="crop-alloc">{c.percentage_area_allocation}</span>
-                  )}
-                </div>
-                {c.rationale && <p className="crop-rationale">{c.rationale}</p>}
-                <div className="kv-grid">
-                  {c.intercropping_options && (
-                    <div className="kv-row">
-                      <div className="kv-key">Intercropping</div>
-                      <div className="kv-val">{c.intercropping_options}</div>
+          {Array.isArray(data.recommended_crops) && data.recommended_crops.length > 0 && (
+            <section className="json-section">
+              <h4>Recommended Crops</h4>
+              <div className="crop-list">
+                {data.recommended_crops.map((c: any, idx: number) => (
+                  <article key={idx} className="crop-card">
+                    <div className="crop-card-header">
+                      <strong className="crop-name">{c.crop_name}</strong>
+                      {c.percentage_area_allocation && (
+                        <span className="crop-alloc">{c.percentage_area_allocation}</span>
+                      )}
                     </div>
-                  )}
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {data.expected_yield_estimates && (
-        <section className="json-section">
-          <h4>Expected Yield Estimates</h4>
-          <ul className="kv-list">
-            {Object.entries(data.expected_yield_estimates).map(([k, v]) => (
-              <li key={k}>
-                <span className="kv-key">{k.replace(/_/g, ' ')}:</span>{' '}
-                <span className="kv-val">{String(v)}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {data.soil_preparation_requirements && (
-        <section className="json-section">
-          <h4>Soil Preparation</h4>
-          <div className="kv-list">
-            {Object.entries(data.soil_preparation_requirements).map(([k, v]) => (
-              <div key={k} className="kv-row">
-                <div className="kv-key">{k.replace(/_/g, ' ')}:</div>
-                <div className="kv-val">{String(v)}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {data.water_and_fertilizer_needs && (
-        <section className="json-section">
-          <h4>Water & Fertilizer</h4>
-          <div className="kv-list">
-            {Object.entries(data.water_and_fertilizer_needs).map(([k, v]) => (
-              <div key={k} className="kv-row">
-                <div className="kv-key">{k.replace(/_/g, ' ')}:</div>
-                <div className="kv-val">
-                  {typeof v === 'object' ? (
-                    <div className="sub-kv">
-                      {Object.entries(v).map(([kk, vv]) => (
-                        <div key={kk} className="kv-row">
-                          <div className="kv-key small">{kk}:</div>
-                          <div className="kv-val small">{String(vv)}</div>
+                    {c.rationale && <p className="crop-rationale">{c.rationale}</p>}
+                    <div className="kv-grid">
+                      {c.intercropping_options && (
+                        <div className="kv-row">
+                          <div className="kv-key">Intercropping</div>
+                          <div className="kv-val">{c.intercropping_options}</div>
                         </div>
-                      ))}
+                      )}
                     </div>
-                  ) : (
-                    String(v)
-                  )}
-                </div>
+                  </article>
+                ))}
               </div>
-            ))}
-          </div>
-        </section>
-      )}
+            </section>
+          )}
 
-      {Array.isArray(data.potential_challenges_and_mitigation_strategies) && (
-        <section className="json-section">
-          <h4>Potential Challenges & Mitigation</h4>
-          <ol className="challenge-list">
-            {data.potential_challenges_and_mitigation_strategies.map((c: any, i: number) => (
-              <li key={i}>
-                <strong>{c.challenge}</strong>
-                <div className="kv-val">{c.mitigation}</div>
-              </li>
-            ))}
-          </ol>
-        </section>
+          {data.expected_yield_estimates && (
+            <section className="json-section">
+              <h4>Expected Yield Estimates</h4>
+              <ul className="kv-list">
+                {Object.entries(data.expected_yield_estimates).map(([k, v]) => (
+                  <li key={k}>
+                    <span className="kv-key">{k.replace(/_/g, ' ')}:</span>{' '}
+                    <span className="kv-val">{String(v)}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {data.soil_preparation_requirements && (
+            <section className="json-section">
+              <h4>Soil Preparation</h4>
+              <div className="kv-list">
+                {Object.entries(data.soil_preparation_requirements).map(([k, v]) => (
+                  <div key={k} className="kv-row">
+                    <div className="kv-key">{k.replace(/_/g, ' ')}:</div>
+                    <div className="kv-val">{String(v)}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {data.water_and_fertilizer_needs && (
+            <section className="json-section">
+              <h4>Water & Fertilizer</h4>
+              <div className="kv-list">
+                {Object.entries(data.water_and_fertilizer_needs).map(([k, v]) => (
+                  <div key={k} className="kv-row">
+                    <div className="kv-key">{k.replace(/_/g, ' ')}:</div>
+                    <div className="kv-val">
+                      {typeof v === 'object' ? (
+                        <div className="sub-kv">
+                          {Object.entries(v).map(([kk, vv]) => (
+                            <div key={kk} className="kv-row">
+                              <div className="kv-key small">{kk}:</div>
+                              <div className="kv-val small">{String(vv)}</div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        String(v)
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {Array.isArray(data.potential_challenges_and_mitigation_strategies) && (
+            <section className="json-section">
+              <h4>Potential Challenges & Mitigation</h4>
+              <ol className="challenge-list">
+                {data.potential_challenges_and_mitigation_strategies.map((c: any, i: number) => (
+                  <li key={i}>
+                    <strong>{c.challenge}</strong>
+                    <div className="kv-val">{c.mitigation}</div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
+        </>
+      )}
+      
+      {hasMoreContent && (
+        <button 
+          className="read-more-btn" 
+          onClick={onToggle}
+          type="button"
+        >
+          {isExpanded ? (
+            <>
+              <span>Read Less</span>
+              <span className="material-symbols-outlined">expand_less</span>
+            </>
+          ) : (
+            <>
+              <span>Read More</span>
+              <span className="material-symbols-outlined">expand_more</span>
+            </>
+          )}
+        </button>
       )}
     </div>
   );
@@ -257,7 +343,16 @@ function AppComponent() {
   /** ---------------- Login state ---------------- **/
   const [showSignIn, setShowSignIn] = useState(false);
   const [farmer, setFarmer] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState<'map' | 'soil-analyzer' | 'news'>('map');
+  const [currentPage, setCurrentPage] = useState<'map' | 'soil-analyzer' | 'news' | 'features'>('map');
+  /** ---------------- Weather data state ---------------- **/
+  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
+  const [isLoadingWeather, setIsLoadingWeather] = useState(false);
+  const [locationName, setLocationName] = useState<string>('');
+  /** ---------------- Panel resize state ---------------- **/
+  const [leftPanelWidth, setLeftPanelWidth] = useState(384);
+  const [rightPanelWidth, setRightPanelWidth] = useState(384);
+  const [isResizingLeft, setIsResizingLeft] = useState(false);
+  const [isResizingRight, setIsResizingRight] = useState(false);
   
   const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -355,10 +450,129 @@ function AppComponent() {
     }
   }, [cameraTarget, setCameraTarget]);
 
+  /** ---------------- Weather data fetching ---------------- **/
+  // Fetch weather data when markers or overlays change, or use initial location
+  useEffect(() => {
+    const fetchWeatherForLocation = async () => {
+      // Priority: rectangular overlays > markers > initial location
+      let targetLat: number | null = null;
+      let targetLng: number | null = null;
+
+      if (rectangularOverlays.length > 0) {
+        const overlay = rectangularOverlays[0];
+        targetLat = overlay.center.lat;
+        targetLng = overlay.center.lng;
+      } else if (markers.length > 0) {
+        const marker = markers[0];
+        targetLat = marker.position.lat;
+        targetLng = marker.position.lng;
+      } else {
+        // Use initial location if no markers/overlays
+        targetLat = INITIAL_VIEW_PROPS.center.lat;
+        targetLng = INITIAL_VIEW_PROPS.center.lng;
+      }
+
+      if (targetLat !== null && targetLng !== null) {
+        setIsLoadingWeather(true);
+        
+        // Fetch weather data
+        const weather = await fetchWeatherData(targetLat, targetLng);
+        setWeatherData(weather);
+        
+        // Fetch location name using reverse geocoding
+        if (geocoder) {
+          try {
+            const results = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
+              geocoder.geocode(
+                { location: { lat: targetLat!, lng: targetLng! } },
+                (results, status) => {
+                  if (status === 'OK' && results) {
+                    resolve(results);
+                  } else {
+                    reject(new Error(`Geocoding failed: ${status}`));
+                  }
+                }
+              );
+            });
+            
+            if (results && results.length > 0) {
+              // Extract a readable location name
+              const result = results[0];
+              // Try to get a formatted address or locality
+              const locationName = result.formatted_address || 
+                                   (result.address_components && result.address_components
+                                     .find(comp => comp.types.includes('locality'))?.long_name) ||
+                                   (result.address_components && result.address_components
+                                     .find(comp => comp.types.includes('administrative_area_level_1'))?.long_name) ||
+                                   `${targetLat.toFixed(4)}, ${targetLng.toFixed(4)}`;
+              setLocationName(locationName);
+            } else {
+              setLocationName(`${targetLat.toFixed(4)}, ${targetLng.toFixed(4)}`);
+            }
+          } catch (error) {
+            console.warn('Error fetching location name:', error);
+            // Fallback to coordinates or weather data location
+            setLocationName(weather?.location || `${targetLat.toFixed(4)}, ${targetLng.toFixed(4)}`);
+          }
+        } else {
+          // If geocoder not available, use weather data location or coordinates
+          setLocationName(weather?.location || `${targetLat.toFixed(4)}, ${targetLng.toFixed(4)}`);
+        }
+        
+        setIsLoadingWeather(false);
+      }
+    };
+
+    fetchWeatherForLocation();
+  }, [markers, rectangularOverlays, geocoder]);
+
   const handleCameraChange = useCallback(
     (props: Map3DCameraProps) => setViewProps(oldProps => ({ ...oldProps, ...props })),
     []
   );
+
+  /** ---------------- Panel resize handlers ---------------- **/
+  const handleMouseDownLeft = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizingLeft(true);
+  }, []);
+
+  const handleMouseDownRight = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizingRight(true);
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isResizingLeft) {
+        const newWidth = Math.max(250, Math.min(600, e.clientX));
+        setLeftPanelWidth(newWidth);
+      }
+      if (isResizingRight) {
+        const newWidth = Math.max(250, Math.min(600, window.innerWidth - e.clientX));
+        setRightPanelWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingLeft(false);
+      setIsResizingRight(false);
+    };
+
+    if (isResizingLeft || isResizingRight) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizingLeft, isResizingRight]);
 
   /** ---------------- UI ---------------- **/
   return (
@@ -386,7 +600,16 @@ function AppComponent() {
               </defs>
             </svg>
           </div>
-          <h2 className="header-title">CropYield Pro</h2>
+          <div className="header-title-group">
+            <h2 
+              className="header-title clickable-title"
+              onClick={() => setCurrentPage('features')}
+              style={{ cursor: 'pointer' }}
+            >
+              AgriConnect
+            </h2>
+            <h4 className="header-subtitle">AI powered Crop Recommendations</h4>
+          </div>
         </div>
         
         <div className="header-nav">
@@ -439,6 +662,10 @@ function AppComponent() {
         <NewsPage />
       )}
 
+      {currentPage === 'features' && (
+        <FeaturesPage onBack={() => setCurrentPage('map')} />
+      )}
+
       {/* 🔐 Modal */}
       {showSignIn && (
         <div className="signin-modal" onClick={() => setShowSignIn(false)}>
@@ -469,22 +696,25 @@ function AppComponent() {
         {currentPage === 'map' && (
           <>
             {/* Mobile Toggle for Sidebar */}
-            <input className="sidebar-toggle" type="checkbox" id="filters-toggle" />
-            <label className="sidebar-toggle-label" htmlFor="filters-toggle">
-              <span className="material-symbols-outlined">menu_open</span>
-            </label>
-            <label className="sidebar-overlay" htmlFor="filters-toggle"></label>
 
             {/* Left Sidebar - Input Farm Details */}
-            <aside className="left-sidebar">
+            <aside className="left-sidebar" style={{ width: `${leftPanelWidth}px`, maxWidth: 'none' }}>
               <div className="sidebar-header-mobile">
-                <h1 className="sidebar-title">Input Farm Details</h1>
                 <label className="sidebar-close" htmlFor="filters-toggle">
                   <span className="material-symbols-outlined">close</span>
                 </label>
               </div>
+              <h1 className="sidebar-title">Input Farm Details</h1>
               <AgriculturalForm />
             </aside>
+
+            {/* Left Resize Handle */}
+            <div 
+              className="resize-handle resize-handle-left"
+              onMouseDown={handleMouseDownLeft}
+            >
+              <div className="resize-handle-line"></div>
+            </div>
 
             {/* Center - Map */}
             <main className="map-container">
@@ -511,68 +741,211 @@ function AppComponent() {
               </div>
             </main>
 
+            {/* Right Resize Handle */}
+            <div 
+              className="resize-handle resize-handle-right"
+              onMouseDown={handleMouseDownRight}
+            >
+              <div className="resize-handle-line"></div>
+            </div>
+
             {/* Right Sidebar - Prediction Summary */}
-            <aside className="right-sidebar">
+            <aside className="right-sidebar" style={{ width: `${rightPanelWidth}px`, maxWidth: 'none' }}>
               <div className="prediction-summary">
                 <h1 className="summary-title">
                   <span className="material-symbols-outlined">analytics</span>
                   Prediction Summary
                 </h1>
                 
-                {recommendations ? (
-                  <div className="recommendations-details">
-                    <FormattedRecommendations text={recommendations} />
-                  </div>
-                ) : (
-                  <div className="no-recommendations">
-                    <p>No recommendations available. Submit the form to get crop recommendations.</p>
-                  </div>
-                )}
+                <div className="recommendations-section">
+                  {recommendations ? (
+                    <div className="recommendations-details">
+                      <FormattedRecommendations text={recommendations} />
+                    </div>
+                  ) : (
+                    <div className="no-recommendations">
+                      <p>No recommendations available. Submit the form to get crop recommendations.</p>
+                    </div>
+                  )}
+                </div>
 
                 <div className="soil-data-section">
                   <div className="soil-data-header">
-                    <h2>Regional Soil Data</h2>
+                    <h2>Weather Data</h2>
                     <button className="view-report-btn">View Full Report</button>
                   </div>
                   
-                  <div className="soil-data-table">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Parameter</th>
-                          <th>Value</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td>Nitrogen (N)</td>
-                          <td>140 mg/kg</td>
-                          <td><span className="status-badge optimal">OPTIMAL</span></td>
-                        </tr>
-                        <tr>
-                          <td>Phosphorus (P)</td>
-                          <td>22 mg/kg</td>
-                          <td><span className="status-badge low">LOW</span></td>
-                        </tr>
-                        <tr>
-                          <td>Potassium (K)</td>
-                          <td>180 mg/kg</td>
-                          <td><span className="status-badge good">GOOD</span></td>
-                        </tr>
-                        <tr>
-                          <td>pH Level</td>
-                          <td>6.5</td>
-                          <td><span className="status-badge neutral">NEUTRAL</span></td>
-                        </tr>
-                        <tr>
-                          <td>Moisture</td>
-                          <td>28%</td>
-                          <td><span className="status-badge adequate">ADEQUATE</span></td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
+                  {isLoadingWeather ? (
+                    <div className="weather-loading">
+                      <p>Loading weather data...</p>
+                    </div>
+                  ) : weatherData ? (
+                    <div className="soil-data-table">
+                      <div className="weather-location">
+                        <span className="material-symbols-outlined">location_on</span>
+                        <span>{locationName || weatherData.location}</span>
+                      </div>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Parameter</th>
+                            <th>Value</th>
+                            <th>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>Temperature</td>
+                            <td>{weatherData.temperature}°C</td>
+                            <td>
+                              <span className={`status-badge ${
+                                weatherData.temperature >= 20 && weatherData.temperature <= 30 
+                                  ? 'optimal' 
+                                  : weatherData.temperature < 10 || weatherData.temperature > 35 
+                                  ? 'low' 
+                                  : 'good'
+                              }`}>
+                                {weatherData.temperature >= 20 && weatherData.temperature <= 30 
+                                  ? 'OPTIMAL' 
+                                  : weatherData.temperature < 10 || weatherData.temperature > 35 
+                                  ? 'EXTREME' 
+                                  : 'GOOD'}
+                              </span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>Feels Like</td>
+                            <td>{weatherData.feelsLike}°C</td>
+                            <td><span className="status-badge neutral">-</span></td>
+                          </tr>
+                          <tr>
+                            <td>Humidity</td>
+                            <td>{weatherData.humidity}%</td>
+                            <td>
+                              <span className={`status-badge ${
+                                weatherData.humidity >= 40 && weatherData.humidity <= 70 
+                                  ? 'optimal' 
+                                  : weatherData.humidity < 30 || weatherData.humidity > 80 
+                                  ? 'low' 
+                                  : 'good'
+                              }`}>
+                                {weatherData.humidity >= 40 && weatherData.humidity <= 70 
+                                  ? 'OPTIMAL' 
+                                  : weatherData.humidity < 30 || weatherData.humidity > 80 
+                                  ? 'EXTREME' 
+                                  : 'GOOD'}
+                              </span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>Wind Speed</td>
+                            <td>{weatherData.windSpeed} km/h</td>
+                            <td>
+                              <span className={`status-badge ${
+                                weatherData.windSpeed < 30 
+                                  ? 'good' 
+                                  : weatherData.windSpeed > 60 
+                                  ? 'low' 
+                                  : 'neutral'
+                              }`}>
+                                {weatherData.windSpeed < 30 
+                                  ? 'NORMAL' 
+                                  : weatherData.windSpeed > 60 
+                                  ? 'HIGH' 
+                                  : 'MODERATE'}
+                              </span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>Pressure</td>
+                            <td>{weatherData.pressure} hPa</td>
+                            <td>
+                              <span className={`status-badge ${
+                                weatherData.pressure >= 1010 && weatherData.pressure <= 1020 
+                                  ? 'optimal' 
+                                  : 'neutral'
+                              }`}>
+                                {weatherData.pressure >= 1010 && weatherData.pressure <= 1020 
+                                  ? 'NORMAL' 
+                                  : 'CHECK'}
+                              </span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>Visibility</td>
+                            <td>{weatherData.visibility} km</td>
+                            <td>
+                              <span className={`status-badge ${
+                                weatherData.visibility >= 10 
+                                  ? 'good' 
+                                  : weatherData.visibility < 5 
+                                  ? 'low' 
+                                  : 'neutral'
+                              }`}>
+                                {weatherData.visibility >= 10 
+                                  ? 'CLEAR' 
+                                  : weatherData.visibility < 5 
+                                  ? 'POOR' 
+                                  : 'MODERATE'}
+                              </span>
+                            </td>
+                          </tr>
+                          {weatherData.uvIndex !== undefined && (
+                            <tr>
+                              <td>UV Index</td>
+                              <td>{weatherData.uvIndex}</td>
+                              <td>
+                                <span className={`status-badge ${
+                                  weatherData.uvIndex <= 5 
+                                    ? 'good' 
+                                    : weatherData.uvIndex > 8 
+                                    ? 'low' 
+                                    : 'neutral'
+                                }`}>
+                                  {weatherData.uvIndex <= 5 
+                                    ? 'SAFE' 
+                                    : weatherData.uvIndex > 8 
+                                    ? 'HIGH' 
+                                    : 'MODERATE'}
+                                </span>
+                              </td>
+                            </tr>
+                          )}
+                          <tr>
+                            <td>Cloud Cover</td>
+                            <td>{weatherData.cloudCover}%</td>
+                            <td>
+                              <span className={`status-badge ${
+                                weatherData.cloudCover < 30 
+                                  ? 'good' 
+                                  : weatherData.cloudCover > 70 
+                                  ? 'neutral' 
+                                  : 'optimal'
+                              }`}>
+                                {weatherData.cloudCover < 30 
+                                  ? 'CLEAR' 
+                                  : weatherData.cloudCover > 70 
+                                  ? 'CLOUDY' 
+                                  : 'PARTLY CLOUDY'}
+                              </span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>Condition</td>
+                            <td>{weatherData.description}</td>
+                            <td><span className="status-badge neutral">-</span></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                      <div className="weather-timestamp">
+                        <small>Last updated: {new Date(weatherData.timestamp).toLocaleString()}</small>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="no-weather-data">
+                      <p>No weather data available. Please select a location.</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </aside>

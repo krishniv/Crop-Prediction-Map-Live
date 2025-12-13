@@ -1,5 +1,4 @@
 
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -20,7 +19,6 @@
  * limitations under the License.
  */
 
-// import React, { useState, FormEvent } from 'react';
 import React, { useState, FormEvent } from 'react';
 import { AgriculturalParameters, fetchAgriculturalRecommendations } from '@/lib/maps-grounding';
 import { useMapStore, useAgriculturalStore } from '@/lib/state';
@@ -113,38 +111,57 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
       // Clear any existing rectangular overlays
       clearRectangularOverlays();
       
-      // Create a rectangular overlay for the farm location
-      const farmSize = formData.farmSize || 10; // Default to 10 hectares if not specified
-      
-      // Calculate rectangle dimensions
-      const dimensions = calculateRectangleDimensions(farmSize);
-      
-      // Calculate the 4 corner points of the rectangle
-      const corners = calculateRectangleCorners(
-        formData.latitude,
-        formData.longitude,
-        farmSize
-      );
-      
-      const rectangularOverlay = {
-        center: {
-          lat: formData.latitude,
-          lng: formData.longitude,
-          altitude: 0
-        },
-        corners: corners,
-        width: dimensions.width,
-        height: dimensions.height,
-        label: `Farm Location (${farmSize} hectares)`,
-        color: '#ff0000' // Red color as requested
-      };
-      
-      // Set the rectangular overlay on the map
-      setRectangularOverlays([rectangularOverlay]);
-      
+      // First, fetch the recommendations to check if location is valid
       const result = await fetchAgriculturalRecommendations(formData);
       const responseText =
         result.candidates?.[0]?.content?.parts?.[0]?.text || 'No recommendations available';
+      
+      // Check if the response indicates an invalid location
+      const invalidLocationMessages = [
+        'Invalid coordinates',
+        'non-agricultural feature',
+        'built-up area',
+        'remote or non-land area',
+        'limited agricultural land',
+        'Unable to verify the coordinates',
+        'water body'
+      ];
+      
+      const isInvalidLocation = invalidLocationMessages.some(msg => 
+        responseText.toLowerCase().includes(msg.toLowerCase())
+      );
+      
+      // Only create overlay if location is valid
+      if (!isInvalidLocation) {
+        const farmSize = formData.farmSize || 10; // Default to 10 hectares if not specified
+        
+        // Calculate rectangle dimensions
+        const dimensions = calculateRectangleDimensions(farmSize);
+        
+        // Calculate the 4 corner points of the rectangle
+        const corners = calculateRectangleCorners(
+          formData.latitude,
+          formData.longitude,
+          farmSize
+        );
+        
+        const rectangularOverlay = {
+          center: {
+            lat: formData.latitude,
+            lng: formData.longitude,
+            altitude: 0      
+          },
+          corners: corners,
+          width: dimensions.width,
+          height: dimensions.height,
+          label: `Farm Location (${farmSize} hectares)`,
+          color: '#ff0000' // Red color as requested
+        };
+        
+        // Set the rectangular overlay on the map
+        setRectangularOverlays([rectangularOverlay]);
+      }
+      
       setRecommendations(responseText);
       if (onSubmit) onSubmit(formData);
     } catch (error) {
@@ -313,48 +330,28 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
     </div>
 
     {/* Multi Crop + Irrigation Row */}
-    <div
-      className="input-group"
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: '40px',
-      }}
-    >
+    <div className="input-group checkbox-group">
       {/* Multi Crop */}
-      <div className="input-field" style={{ flex: 1 }}>
-        <label htmlFor="multiCrop">Multi Crop</label>
-        <select
-          id="multiCrop"
-          value={formData.multiCrop || ''}
-          onChange={(e) => handleInputChange('multiCrop', e.target.value)}
-          required
-          style={{
-            width: '100%',
-            height: '40px',
-            borderRadius: '6px',
-          }}
-        >
-          {/* <option value="">Yes</option> */}
-          <option value="Yes">Yes</option>
-          <option value="No">No</option>
-        </select>
+      <div className="input-field checkbox-field">
+        <label htmlFor="multiCrop">
+          <input
+            type="checkbox"
+            id="multiCrop"
+            checked={formData.multiCrop === 'Yes'}
+            onChange={(e) =>
+              handleInputChange('multiCrop', e.target.checked ? 'Yes' : 'No')
+            }
+          />
+          Multi Crop
+        </label>
       </div>
 
       {/* Irrigation Available */}
-      <div
-        className="input-field checkbox-field"
-        style={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          marginTop: '16px',
-        }}
-      >
-        <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <div className="input-field checkbox-field">
+        <label htmlFor="irrigationAvailable">
           <input
             type="checkbox"
+            id="irrigationAvailable"
             checked={formData.irrigationAvailable || false}
             onChange={(e) =>
               handleInputChange('irrigationAvailable', e.target.checked)
@@ -371,7 +368,6 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
           {/* Submit Button */}
           <div className="form-actions">
             <button type="submit" className="submit-button" disabled={isSubmitting}>
-              <span className="material-symbols-outlined">agriculture</span>
               {isSubmitting ? 'Getting Recommendations...' : 'Get Crop Recommendations'}
             </button>
             {error && (
@@ -384,5 +380,3 @@ export default function AgriculturalForm({ onSubmit }: AgriculturalFormProps) {
       </div>
   );
 }
-
-
